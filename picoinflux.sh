@@ -1,6 +1,7 @@
 #!/bin/sh
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
 # ADDTIONALY set custom hostname in /etc/picoinfluxid
@@ -17,4 +18,5 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
 ) 2>/dev/null |grep -v =$| sed 's/=/,host='"$hostname"' value=/g' > ~/.influxdata
 
-curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 >/dev/null
+curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 >/tmp/picoinflux.log
+rm @$HOME/.influxdata
