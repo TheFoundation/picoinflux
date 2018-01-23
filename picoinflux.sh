@@ -1,4 +1,6 @@
 #!/bin/sh
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
 # ADDTIONALY set custom hostname in /etc/picoinfluxid
