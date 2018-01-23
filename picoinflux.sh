@@ -14,6 +14,11 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
 	echo "conntrack_connections="$(wc -l /proc/1/net/nf_conntrack|cut -d" " -f1)
 	
+	echo "pingLevel3DNS="$(ping 4.2.2.4 -c 2 -w 2  2>&1|grep "bytes from"|wc -l);
+	echo "pingGoogleDNS="$(ping 8.8.8.8 -c 2 -w 2  2>&1|grep "bytes from"|wc -l);
+	c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g'
+	for i in $(seq 0 31);do test -e /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_cur_freq);done
+	for i in $(seq 0 31);do test -e /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done
 	echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
 	echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
 	echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
@@ -21,7 +26,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
 	echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
 	echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
-	
+	echo "cups_access"$(wc -l /var/log/cups/access_log)
+	echo "cups_error"$(wc -l /var/log/cups/error_log)	
 	
 	cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g'
 	echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
