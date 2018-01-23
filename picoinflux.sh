@@ -14,8 +14,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "conntrack_connections="$(wc -l /proc/1/net/nf_conntrack|cut -d" " -f1)
 	
 	echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
-	echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d" " -f1)
-	echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d" " -f1)
+	echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
+	echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
 	echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
 	echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
 	echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
