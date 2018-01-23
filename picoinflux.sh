@@ -26,8 +26,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
 	echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
 	echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
-	echo "cups_access"$(wc -l /var/log/cups/access_log)
-	echo "cups_error"$(wc -l /var/log/cups/error_log)	
+	echo "cups_access="$(wc -l /var/log/cups/access_log)
+	echo "cups_error="$(wc -l /var/log/cups/error_log)	
 	
 	cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g'
 	echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
