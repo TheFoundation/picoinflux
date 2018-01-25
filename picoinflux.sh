@@ -14,6 +14,7 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
 	echo "conntrack_connections="$(wc -l /proc/1/net/nf_conntrack|grep -v 127.0.0.1|cut -d" " -f1)
 	
+	
 	echo "pingLevel3DNS"$(ping 4.2.2.4 -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1);
 	echo "pingGoogleDNS"$(ping 8.8.8.8 -c 2 -w 2  -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1);
 	c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g'
@@ -28,6 +29,10 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
 	echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
 	echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)	
+	
+	echo "upgradesavail_apt="$(apt list --upgradable 2>/dev/null|wc -l|cut -d" " -f1)
+	echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
+	
 	
 	cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g'
 	echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
