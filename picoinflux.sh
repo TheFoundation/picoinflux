@@ -9,7 +9,7 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 
 (	cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';
 	cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g'
-	echo "netstat_connections="$(netstat -putn|grep ":"|wc -l);
+	echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
 	echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1)
 	echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
 	echo "conntrack_connections="$(wc -l /proc/1/net/nf_conntrack|grep -v 127.0.0.1|cut -d" " -f1)
