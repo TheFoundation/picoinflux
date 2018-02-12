@@ -31,7 +31,7 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
 	echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)	
 	
-	echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |grep -v "..." |wc -l|cut -d" " -f1)
+	echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
 	echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
 	
 	
