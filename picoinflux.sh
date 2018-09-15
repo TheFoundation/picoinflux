@@ -42,8 +42,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (hostname||(uci show system.@sys
 	echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
 	
 	which docker >/dev/null && docker ps --format "{{.Names}}" -a|tail -n+2 |while read contline;do echo $( echo -n $contline":" ; nsenter -t $(docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n netstat -puteen 2>&1 | grep -e ^tcp -e ^udp |wc -l ) & done|grep -v :0$|sed 's/^/docker_netstat_combined_/g;s/:/=/g'
-	which docker >/dev/null && docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream --no-trunc|grep -v -e "0.**%"$ -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent_/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'
-	which docker >/dev/null && docker stats --format "table {{.Name}}\t{{.MemPerc}}" --no-stream --no-trunc|grep -v -e "0.**%"$ -e ^NAME|sed 's/%//g;s/^/docker_memtop20_percent_/g' |sort -k2 |sed 's/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|tail -n 20
+	which docker >/dev/null && docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream --no-trunc|grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent_/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'
+	which docker >/dev/null && docker stats --format "table {{.Name}}\t{{.MemPerc}}" --no-stream --no-trunc|grep -v -e "0.00%"$ -e ^NAME|sed 's/%//g;s/^/docker_memtop20_percent_/g' |sort -k2 |sed 's/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|tail -n 20
 	
 ) 2>/dev/null |grep -v =$| sed 's/=/,host='"$hostname"' value=/g' > ~/.influxdata
 
