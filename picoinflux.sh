@@ -5,7 +5,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
 # ADDTIONALY set custom hostname in /etc/picoinfluxid
-hostname=$( (test -f /etc/picoinfluxid && cat /etc/picoinfluxid) 2>/dev/null || (which hostname && hostname )|| (which uci && ( uci show |grep ^system|grep hostname=|cut -d\' -f2  ))) 2>/dev/null
+hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname && hostname || (which uci && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
 
 (	test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
 	test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g')
@@ -33,7 +33,7 @@ hostname=$( (test -f /etc/picoinfluxid && cat /etc/picoinfluxid) 2>/dev/null || 
 	test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 	test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done	
 	which mount >/dev/null && which awk >/dev/null && which df >/dev/null && mount|grep -v docker|grep -e xfs -e ext4 -e ext3 -e ext2 -e ntfs -e vfat -e reiserfs -e fat32 -e btrfs -e hfsplus -e gluster -e nfs |grep -v /proc|sed 's/^.\+ on //g'|cut -d" " -f1|while read place ;do df $place  -x devtmpfs -x tmpfs -x debugfs -m |awk '{print $6" "$5}' |awk -vOFS='\t' 'NF > 0 { $1 = $1 } 1'|grep "$place"|sed 's/\//-/g;s/^- /root/g;s/^-\t/root /g;s/^/diskusepercent_/g;s/%//g;s/\t/ /g;s/ \+/=/g;s/_-/_/g';done
-	which apt  >/dev/null && echo "upgradesavail_apt="$( (apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
+	which apt  >/dev/null && echo "upgradesavail_apt="$(( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
 	which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
 	echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
 		
@@ -47,4 +47,4 @@ hostname=$( (test -f /etc/picoinfluxid && cat /etc/picoinfluxid) 2>/dev/null || 
 	
 ) 2>/dev/null |grep -v =$| sed 's/=/,host='"$hostname"' value=/g' > ~/.influxdata
 
-(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm  $HOME/.influxdata 2>&1 ) > /tmp/picoinflux.log 
+(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm  $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log 
