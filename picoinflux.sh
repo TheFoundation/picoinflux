@@ -36,11 +36,11 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname && hostname || (
 	which apt >/dev/null && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
 	which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
 	echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
-	echo bloc1 >&2 
+	echo bloc1 1>&2 
 	test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g')
 	echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
 	echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
-	echo bloc2 >&2
+	echo bloc2 1>&2
 	docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do echo $( echo -n $contline":" ; nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n netstat -puteen | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline netstat -puteen |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined_/g;s/:/=/g'
 	docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent_/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'
 	docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.MemPerc}}" --no-stream |grep -v -e "0.00%"$ -e ^NAME|sed 's/%//g;s/^/docker_memtop20_percent_/g' |sort -k2 |sed 's/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|tail -n 20
