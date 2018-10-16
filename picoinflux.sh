@@ -7,7 +7,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # ADDTIONALY set custom hostname in /etc/picoinfluxid
 hostname=$( (test -f /etc/picoinfluxid && cat /etc/picoinfluxid) 2>/dev/null || (which hostname && hostname )|| (which uci && ( uci show |grep ^system|grep hostname=|cut -d\' -f2  ))) 2>/dev/null
 
-(	test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
+(	test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';
 	test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g')
 	which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
 	test -f && echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1)
