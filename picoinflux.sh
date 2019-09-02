@@ -1,6 +1,8 @@
 #!/bin/sh
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+##openwrt and other mini systems have no nansoeconds
+timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
@@ -19,7 +21,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	echo "pingGoogleDNS"$(ping 8.8.8.8 -c 2 -w 2  -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
 	c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g'
 	for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done
-	for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done
+        # intel nuc new gen reports -263200 on temp 0 for no reason
+	for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done|sed 's/-263200//g'
 	for h in $(seq 0 31);do for i in $(seq 0 31);do test -f /sys/class/hwmon/hwmon$h/device/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/device/temp"$i"_input); test -f /sys/class/hwmon/hwmon$h/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/temp"$i"_input);done;done
 	test -f /proc/uptime && echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
 	test -d /var/log/ && echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
@@ -46,6 +49,6 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent_/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'
 	docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.MemPerc}}" --no-stream |grep -v -e "0.00%"$ -e ^NAME|sed 's/%//g;s/^/docker_memtop20_percent_/g' |sort -k2 |sed 's/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|tail -n 20
 	
-) 2>/dev/null |grep -v =$| sed 's/=/,host='"$hostname"' value=/g' > ~/.influxdata
+) 2>/dev/null |grep -v =$| sed 's/=/,host='"$hostname"' value=/g'|sed 's/$/ '$(timestamp_nanos)'/g' >> ~/.influxdata
 
 (curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm  $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log 
