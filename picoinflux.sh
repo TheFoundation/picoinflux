@@ -34,7 +34,7 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	test -f /var/log/mail.log && echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
 	test -f /var/log/mail.err && echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
 	test -f /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_boounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
+        test -f /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
 	test -f /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
 	test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 	test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done
