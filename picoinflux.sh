@@ -3,8 +3,10 @@ SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
+# TARGET_FORMAT_T: load,shortterm,host=SampleClient value=
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
-# ADDTIONALY set custom hostname in /etc/picoinfluxid
+# ADDITIONNALY set custom hostname in /etc/picoinfluxid
+timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
 
 (	test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
@@ -33,7 +35,10 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 	test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done
 	test -f /proc/mdstat && ( dev="";sed 's/\(check\|recovery\|finish\|speed\)/\n#     \0/g;s/^ /#/g' /proc/mdstat |grep -v -e "^# *$" -e "unused devices" -e ^Personalities |while read a ; do if [[ "$a" =~ ^#.*  ]]; then echo "$a"|sed 's/^# \+/'$dev" : "'/g'; else dev=$(echo "$a"|cut -d" " -f1);echo "$a";fi;done|grep -e recovery -e speed -e finish -e check|sed 's/\(min\|K\/sec\|%.\+\)$//g;s/ //g;s/:/_/g;s/^/raid_sync_/g;s/_\(check\|recovery\)/_percent\0/g' )
-	which mount >/dev/null && which awk >/dev/null && which df >/dev/null && mount|grep -v docker|grep -e "type overlay" -e "overlay (" -e xfs -e ext4 -e ext3 -e ext2 -e ntfs -e vfat -e reiserfs -e fat32 -e btrfs -e hfsplus -e gluster -e nfs |grep -v /proc|sed 's/^.\+ on //g'|cut -d" " -f1|while read place ;do ((df $place  -x devtmpfs -x tmpfs -x debugfs -m  2>/dev/null ) || (df $place -m 2>/dev/null   |grep -v -e devtmpfs -e tmpfs -e debugfs ))|sed 's/ \+/ /g;s/\t\+/\t/g;s/ /\t/g' |awk '{print $6" "$5}' |awk -vOFS='\t' 'NF > 0 { $1 = $1 } 1'|grep "$place"|sed 's/\//-/g;s/^- /root/g;s/^-\t/root /g;s/^/diskusepercent_/g;s/%//g;s/\t/ /g;s/ \+/=/g;s/_-/_/g';done 
+
+	#which mount >/dev/null && which awk >/dev/null && which df >/dev/null && mount|grep -v docker|grep -e "type overlay" -e "overlay (" -e xfs -e ext4 -e ext3 -e ext2 -e ntfs -e vfat -e reiserfs -e fat32 -e btrfs -e hfsplus -e gluster -e nfs |grep -v /proc|sed 's/^.\+ on //g'|cut -d" " -f1|while read place ;do ((df $place  -x devtmpfs -x tmpfs -x debugfs -m  2>/dev/null ) || (df $place -m 2>/dev/null   |grep -v -e devtmpfs -e tmpfs -e debugfs ))|sed 's/ \+/ /g;s/\t\+/\t/g;s/ /\t/g' |awk '{print $6" "$5}' |awk -vOFS='\t' 'NF > 0 { $1 = $1 } 1'|grep "$place"|sed 's/\//-/g;s/^- /root/g;s/^-\t/root /g;s/^/diskusepercent_/g;s/%//g;s/\t/ /g;s/ \+/=/g;s/_-/_/g';done 
+	which mount >/dev/null && which awk >/dev/null && which df >/dev/null && mount|grep -v docker|grep -e "type overlay" -e "overlay (" -e xfs -e ext4 -e ext3 -e ext2 -e ntfs -e vfat -e reiserfs -e fat32 -e btrfs -e hfsplus -e gluster -e nfs |grep -v /proc|sed 's/^.\+ on //g'|cut -d" " -f1|while read place ;do ((df $place  -x devtmpfs -x tmpfs -x debugfs -m  2>/dev/null ) || (df $place -k 2>/dev/null   |grep -v -e devtmpfs -e tmpfs -e debugfs ))| awk '{ printf "%s %4.2f\n", $6, $3/$2*100.0}'|grep "$place"|sed 's/\//-/g;s/^- /root /g;s/^-\t/root /g;s/^/diskusepercent_/g;s/%//g;s/\t/ /g;s/ \+/=/g;s/_-/_/g';done
+
 	which apt >/dev/null && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
 	which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
 	echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
