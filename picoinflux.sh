@@ -47,8 +47,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	## inspired by https://bbs.archlinux.org/viewtopic.php?id=195347
 	awk '/^MemTotal/ { t=$2 } /^MemAvailable/ { a=$2 } END { printf "memory_percentfree_simple=%.2f\n", ( a / t * 100 ) }' /proc/meminfo;
 	## inspired by https://stackoverflow.com/questions/22175474/determine-free-memory-in-linux and https://bbs.archlinux.org/viewtopic.php?id=195347
-	awk '/^MemTotal/ { t=$2 } /^MemFree/ { f=$2 } /^Buffers/ { b=$2 } /^Cached/ { c=$2 } END { printf "memory_percentfree_buffcache=%.2f\n", 100-((f+b-c)/t*100) }' /proc/meminfo;
-
+#	awk '/^MemTotal/ { t=$2 } /^MemFree/ { f=$2 } /^Buffers/ { b=$2 } /^Cached/ { c=$2 } END { printf "memory_percentfree_buffcache=%.2f\n", 100-((f+b-c)/t*100) }' /proc/meminfo;
+        awk '/^MemTotal/ { t=$2 } /^MemFree/ { f=$2 } /^Buffers/ { b=$2 } /^Cached/ { c=$2 } /^MemAvailable/ { a=$2 } END { printf "memory_percentfree_buffcache=%.2f\n", ((t-a+b+c)/t*100) }' /proc/meminfo;
 	which apt >/dev/null && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
 	which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
 	echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
