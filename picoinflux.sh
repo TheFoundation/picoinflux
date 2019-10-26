@@ -88,5 +88,22 @@ wait
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
-(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log 
+grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 ~/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )  || ( \
+	(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata $HOME/.influxdata.sent 2>&1 ) >/tmp/picoinflux.log 
+
+
+##picoinflux.conf examples (first line pass/token,second URL , comments from line 4)
+##example V1
+user:buzzword
+https://corlysis.com:8086/write?db=sys
+
+
+
+##example V2
+KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
+https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+TOKEN=true
+
+
+
