@@ -95,15 +95,15 @@ grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization
 
 ##picoinflux.conf examples (first line pass/token,second URL , comments from line 4)
 ##example V1
-user:buzzword
-https://corlysis.com:8086/write?db=sys
+#user:buzzword
+#https://corlysis.com:8086/write?db=sys
 
 
 
-##example V2
-KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
-https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
-TOKEN=true
+##example V2 
+#KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
+#https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+#TOKEN=true
 
 
 
