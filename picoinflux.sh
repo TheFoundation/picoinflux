@@ -89,15 +89,24 @@ wait
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
+grep -q "SECONDARY=true" ~/.picoinflux.conf &&  ( cp $HOME/.influxdata $HOME/.influxdata.secondary )
+
+( grep -q "TOKEN2=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= ~/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
+	(curl -s -k -u $(grep ^AUTH2= ~/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  ) & 
+
+
 grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 ~/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )  || ( \
 	(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )
+
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata $HOME/.influxdata.sent 2>&1 ) >/tmp/picoinflux.log 
 
 
-##picoinflux.conf examples (first line pass/token,second URL , comments from line 4)
+
+
+##picoinflux.conf examples (first line pass/token,second line url URL , rest is ignored except secondary config)
 ##example V1
 #user:buzzword
-#https://corlysis.com:8086/write?db=sys
+#https://corlysis.com:8086/write?db=mydatabase
 
 
 
@@ -108,3 +117,17 @@ grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization
 
 
 
+
+##  add the following lines for a backup/secondary write with user/pass auth:
+# SECONDARY=true
+# URL2=https://corlysis.com:8086/write?db=mydatabase
+# AUTH2=user:buzzword
+# TOKEN2=false
+# 
+
+##  add the following lines for a backup/secondary write with token (influx v2):
+# SECONDARY=true
+# URL2=https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+# AUTH2=KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
+# TOKEN2=true
+# 
