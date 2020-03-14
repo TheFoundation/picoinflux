@@ -89,17 +89,17 @@ wait
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
-grep -q "SECONDARY=true" ~/.picoinflux.conf && (
+grep -q "^SECONDARY=true" $HOME/.picoinflux.conf && (
 
-	 ( cp $HOME/.influxdata $HOME/.influxdata.secondary )
+	( cp $HOME/.influxdata $HOME/.influxdata.secondary )
 
-	grep -q "TOKEN2=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= ~/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
-	(curl -s -k -u $(grep ^AUTH2= ~/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  & ) 
+	grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
+	(curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log  
 	)
 
 
-grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 ~/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )  || ( \
-	(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )
+grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )  || ( \
+	(curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )
 
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata $HOME/.influxdata.sent 2>&1 ) >/tmp/picoinflux.log 
 
