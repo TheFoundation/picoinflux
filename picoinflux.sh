@@ -13,8 +13,8 @@ _sys_load_percent() {
 NCPU=$(which nproc &>/dev/null && nproc ||  (grep ^processor /proc/cpuinfo |wc -l) );
 LOAD_MID=$(cut /proc/loadavg -d" " -f2);
 LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
-echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$1/$2 }' ) ;
-echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$1/$2 }' ) ;
+echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
+echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
 # second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
 echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) ; } ;
 
