@@ -16,8 +16,7 @@ LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
 echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
 echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
 # second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
-echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) 
- echo ; } ;
+echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime)  ; } ;
 
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
