@@ -86,6 +86,11 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) &
 #use tags	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent_/g'|head -n20 ) &
 	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|head -n20 ) &
+
+### RAM Mbyze
+        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
+
+
 wait
 ) 2>/dev/null |grep -v =$| sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' >> ~/.influxdata
 
