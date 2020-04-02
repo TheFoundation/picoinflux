@@ -8,12 +8,28 @@ timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;el
 # TARGET_FORMAT_T: load,shortterm,host=SampleClient value=
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
 # ADDITIONNALY set custom hostname in /etc/picoinfluxid
+
+_sys_load_percent() { 
+NCPU=$(which nproc &>/dev/null && nproc ||  (grep ^processor /proc/cpuinfo |wc -l) );
+LOAD_MID=$(cut /proc/loadavg -d" " -f2);
+LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
+echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
+echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
+# second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
+echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) 
+ echo ; } ;
+
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
 
-(	which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' ) &
-	test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-	test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g')
+
+(	
+  _sys_load_percent | grep -v =$ & 
+  test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
+	
+  which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' ) &
+	_
+  test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g')
 	c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g'
 	for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done
 
@@ -87,18 +103,28 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 #use tags	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent_/g'|head -n20 ) &
 	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|head -n20 ) &
 
-### RAM Mbyze
+### RAM Mbytez
         ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
 
+        
 
 wait
-) 2>/dev/null |grep -v =$| sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' >> ~/.influxdata
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  >> ~/.influxdata
+sleep 2
+
+
+##2nd round load,since we might have caused it 
+(
+_sys_load_percent | grep -v =$ & 
+  test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';) 
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  >> ~/.influxdata
 
 ## sed 's/=/,host='"$hostname"' value=/g'
-
+##TRANSMISSION STAGE::
+##check config presence of secondary host and replicate 
 grep -q "^SECONDARY=true" $HOME/.picoinflux.conf && (
-
-	( cp $HOME/.influxdata $HOME/.influxdata.secondary )
+	( ( test -f $HOME/.influxdata && cat $HOME/.influxdata ; test -f $HOME/.influxdata.secondary && $HOME/.influxdata.secondary ) | sort |uniq > $HOME/.influxdata.tmp ;
+  mv $HOME/.influxdata.tmp $HOME/.influxdata.secondary )  ## 
 
 	grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
 	(curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log  
