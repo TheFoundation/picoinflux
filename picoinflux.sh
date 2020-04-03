@@ -19,9 +19,9 @@ echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100
 echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) ; } ;
 
 _sys_memory_percent() {
- grep -e "[0-9]" /proc/swaps |awk '{print  -$4/$3*100 }'|sed 's/^/sys_mem_percent=target=swap=/g';
- echo "sys_mem_percent=target=ram="$(echo $(grep -e MemTotal -e MemFree /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*$2/$1}') ; } ;
- 
+ grep -e "[0-9]" /proc/swaps |awk '{print  -$4/$3*100 }'|sed 's/^/sys_mem_percent_swap=/g';
+ echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*$2/$1}') ; } ;
+
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
 
