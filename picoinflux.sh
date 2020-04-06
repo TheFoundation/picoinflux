@@ -20,7 +20,7 @@ echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/up
 
 _sys_memory_percent() {
 grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
- echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*$2/$1}') ; } ;
+ echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
 
 #### time stamp and hostname ####
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
