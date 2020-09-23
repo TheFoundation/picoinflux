@@ -120,9 +120,11 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 
 	( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do  docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ; nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n netstat -puteen | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline netstat -puteen |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$") &
 
-	( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) &
+(
+	( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
 
-	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|head -n20 ) &
+	( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
+  echo  ) &
 
 ### RAM Mbytez
 ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
