@@ -28,7 +28,7 @@ timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;el
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
 
 ## disk detection
-_physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|sed 's/^/\/dev\//g' } || { find /dev -name "[vhs]d?";find /dev -name "sg[a-z][0-9]" } ; } ;
+_physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|sed 's/^/\/dev\//g' ; } || { find /dev -name "[vhs]d?";find /dev -name "sg[a-z][0-9]" ; } ; } ;
 
 ######### main  ####################'
 (
