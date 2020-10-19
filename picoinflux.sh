@@ -7,24 +7,29 @@ timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;el
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # TARGET_FORMAT_T: load,shortterm,host=SampleClient value=
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
-# ADDITIONNALY set custom hostname in /etc/picoinfluxid
+# ADDITIONALLY set custom hostname in /etc/picoinfluxid
 
+## load 
 _sys_load_percent() {
-NCPU=$(which nproc &>/dev/null && nproc ||  (grep ^processor /proc/cpuinfo |wc -l) );
-LOAD_MID=$(cut /proc/loadavg -d" " -f2);
-LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
-echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
-echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
-# second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
-echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) ; } ;
+    NCPU=$(which nproc &>/dev/null && nproc ||  (grep ^processor /proc/cpuinfo |wc -l) );
+    LOAD_MID=$(cut /proc/loadavg -d" " -f2);
+    LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
+    echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
+    echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
+    # second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
+    echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) ; } ;
 
 _sys_memory_percent() {
-grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
- echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
+    grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
+    echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
 
 #### time stamp and hostname ####
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && hostname || (which uci >/dev/null && uci show |grep ^system|grep hostname=|cut -d\' -f2 ))) 2>/dev/null
+
+## disk detection
+_physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|sed 's/^/\/dev\//g' } || { find /dev -name "[vhs]d?";find /dev -name "sg[a-z][0-9]" } ; } ;
+
 ######### main  ####################'
 (
   _sys_load_percent | grep -v =$ &
@@ -73,9 +78,9 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
 	test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 
   ##disks
-  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done
+  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" 
 
-  which smartctl&>/dev/null && find /dev -name "sd?" |while read disk;do  diskinfo=$(smartctl -A ${disk}) ;
+  which smartctl&>/dev/null && { _physical_disks |while read disk;do  diskinfo=$(smartctl -A ${disk} 2>/dev/null) ;
                                               echo "$diskinfo" | awk '/Power_On_Hours/ {print "sys_disk_hours,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" | awk '/Multi_Zone_Error_Rate/ {print "sys_disk_error_multizone,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" |cut -d"(" -f1 | awk '/Reallocated_Sector_Ct/ {print "sys_disk_error_sector_realloc,target='${disk/\/dev\//}'="$NF}'
@@ -83,10 +88,8 @@ hostname=$(cat /etc/picoinfluxid 2>/dev/null || (which hostname >/dev/null && ho
                                               echo "$diskinfo" | awk '/Current_Pending_Sector/ {print "sys_disk_error_pending_sector,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" | awk '/Seek_Error_Rate/ {print "sys_disk_error_seek_rate,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" |cut -d"(" -f1 | awk '/Temperature_Celsius/ {print "temp_disk,target='${disk/\/dev\//}'="$NF}'
-
-
-
                                               done
+				}
 
   #raid
   find /dev -type b -name "md*" |while read myraid ;do mdadm --detail ${myraid} | grep -e '^\s*State : ' | awk '{ print $NF; }' |grep -e active -e clean -q && echo sys_raid_statuscode,target=${myraid//\/dev\//}=200 || echo 409;done
