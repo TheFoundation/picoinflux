@@ -135,7 +135,7 @@ _physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|s
 
 
 wait
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  >> ~/.influxdata
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done |grep value=  >> ~/.influxdata
 sleep 2
 
 
@@ -144,7 +144,7 @@ sleep 2
 _sys_memory_percent | grep -v =$ &
 _sys_load_percent | grep -v =$ &
   test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  >> ~/.influxdata
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  |grep value= >> ~/.influxdata
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 ##TRANSMISSION STAGE::
@@ -158,8 +158,8 @@ grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
 	)
 
 
-grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )  || ( \
-	(curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && rm $HOME/.influxdata 2>&1 ) >/tmp/picoinflux.log  )
+grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )  || ( \
+	(curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
 
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata $HOME/.influxdata.sent 2>&1 ) >/tmp/picoinflux.log
 
