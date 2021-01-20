@@ -32,8 +32,9 @@ test -f $countfile && {
     [[ -z "$start" ]] && echo "countfile empty" ;
     [[ -z "$start" ]] && exit 1;
      echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
-     windowsize=$2
-  [[ -z "$windowsize" ]] && windowsize=30
+  windowsize=$2
+  [[ -z "$windowsize" ]] && windowsize=1000
+  echo "windowsize: $windowsize"
   importlength=$(cat $importfile|wc -l )
   rounds=$(($importlength/windowsize));
   echo rounds:$rounds;
