@@ -20,7 +20,7 @@ grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization
         (curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && rm /dev/shm/.influxIMPORT.$token 2>&1 ) >/dev/stderr  )
 
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && mv /dev/shm/.influxIMPORT.$token /dev/shm/.influxIMPORT.$token.sent 2>&1 ) >/dev/stderr
-
+rm /dev/shm/.influxIMPORT.$token
 echo -n ; } ;
 
 starttime=$(date +%s -u)
