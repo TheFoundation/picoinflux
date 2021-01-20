@@ -52,7 +52,7 @@ test -f $countfile && {
     [[ 0 -eq "$tps" ]] && tps=1
     togo=$(($importlength-$mywinstart))
     secondsremain=$((tps*togo))
-    eta=$(($seconndsremain/60))
+    eta=$(($secondsremain/60))
     etasec=$((($secondsremain-$eta*60)%60))
     uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|wc -c)
     echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: done $donecurrent doing  transaction (size $uplsize Byte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min  $etasec s "'\r' >&2 ;
