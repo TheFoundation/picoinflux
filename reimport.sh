@@ -27,7 +27,7 @@ starttime=$(date +%s -u)
 start=1
 countfile=${importfile}.count
 echo countfile=$countfile
-test -f $countfile && { start=$(cat $countfile); echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
+test -f $countfile && { start=$(cat $countfile); [[ -z "$start"]] || echo "countfile empty" ; echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
 windowsize=30;
 importlength=$(cat $importfile|wc -l )
 rounds=$(($importlength/windowsize));
@@ -45,4 +45,4 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
 
   eta=$(($togo/$tps/60))
   echo -ne  "time $timerans ( $timeranm m $secrem s ) at $tps transactions/s: doing from line: $mywinstart to line: $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
-  tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywindowend > $countfile ;done  2>&1
+  tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
