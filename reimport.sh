@@ -26,7 +26,7 @@ echo -n ; } ;
 starttime=$(date +%s -u)
 start=1
 countfile=${importfile}.count
-test -f $countfile && { start=$(cat $countfile) ; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
+test -f $countfile && { start=$(cat $countfile); echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
 windowsize=30;
 importlength=$(cat $importfile|wc -l )
 rounds=$(($importlength/windowsize));
