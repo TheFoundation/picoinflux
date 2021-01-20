@@ -49,5 +49,5 @@ test -f $countfile && {
     togo=$(($importlength-$mywinstart))
     eta=$(($togo/$tps/60))
     uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|du -b /dev/stdin|cut -d" " -f1)
-    echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: doing  transaction (size $uplsize): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min   "'\r' >&2 ;
+    echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: doing  transaction (size $uplsize Kbyte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min   "'\r' >&2 ;
     tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
