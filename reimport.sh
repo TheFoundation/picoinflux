@@ -37,6 +37,7 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
   timerans=$(($(date +%s -u )-$starttime));
   timeranm=$(($timerans/60))
   secrem=$((($timerans-$timeranm*60)%60));
+  [[ -z $secrem ]] && secrem=0
   [[ 0 -eq "$timerans" ]] && timerans=1
   tps=$((($mywinstart-$start+1)/$timerans))
   [[ 0 -eq "$tps" ]] && tps=1
