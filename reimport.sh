@@ -42,13 +42,13 @@ test -f $countfile && {
   echo starting with seq $start $windowsize $(cat $importfile|wc -l)
   for mywinstart in $(seq $start $windowsize $(cat $importfile|wc -l) )  ;  do
     mywinend=$(($windowsize+$mywinstart));
-    timerans=$(($(date +%s -u )-$starttime));
+    timerans=$(($(date +%s -u)-$starttime));
     timeranm=$(($timerans/60))
     secrem=$((($timerans-$timeranm*60)%60));
     [[ 0 -eq "$timerans" ]] && timerans=1
     donecurrent=$(($mywinstart-$start))
     [[ 0 -eq "$donecurrent" ]] && donecurrent=1
-    tps=$(($timerans/$donecurrent))
+    tps=$(($donecurrent/$timerans))
     [[ 0 -eq "$tps" ]] && tps=1
     togo=$(($importlength-$mywinstart))
     eta=$(($togo/$tps/60))
