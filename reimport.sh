@@ -39,7 +39,7 @@ test -f $countfile && {
   rounds=$(($importlength/windowsize));
   echo rounds:$rounds;
   eta=unknown;
-  for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
+  for mywinstart in $(seq $start $windowsize $(cat $importfile|wc -l) )  ;  do
     mywinend=$(($windowsize+$mywinstart));
     timerans=$(($(date +%s -u )-$starttime));
     timeranm=$(($timerans/60))
