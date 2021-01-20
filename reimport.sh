@@ -51,7 +51,7 @@ test -f $countfile && {
     tps=$(($donecurrent/$timerans))
     [[ 0 -eq "$tps" ]] && tps=1
     togo=$(($importlength-$mywinstart))
-    secondsremain=$((tps*togo))
+    secondsremain=$(($togo/$tps))
     eta=$(($secondsremain/60))
     etasec=$((($secondsremain-$eta*60)%60))
     uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|wc -c)
