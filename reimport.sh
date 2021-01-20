@@ -36,8 +36,8 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
   mywinend=$(($windowsize+$mywinstart));
   timerans=$(($(date +%s -u )-$starttime));  timeranm=$(($timerans/60))
   secrem=$((($timerans-$timeranm*60)%60));
-  tps=$(($mywinstart/$timerans))
+  tps=$(($mywinstart-$start/$timerans))
   togo=$(($importlength-$mywinstart))
   eta=$(($togo/$tps/60))
-  echo -ne  "time $timeran m $remsec s at $tps transactions per second: doing from line $mywinstart $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
+  echo -ne  "time $timeran m $remsec s at $tps transactions/s: doing from line $mywinstart $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
   tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywindowend ;done  2>&1
