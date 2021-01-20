@@ -48,5 +48,5 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
   togo=$(($importlength-$mywinstart))
 
   eta=$(($togo/$tps/60))
-  echo -ne  "time $timerans ( $timeranm m $secrem s ) at $tps transactions/s: doing from line: $mywinstart to line: $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
+  echo -ne  "time $timerans ( $timeranm m $secrem s ) at $tps transactions/s: doing lines: $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print '$importlength'/'$mywinstart'}' )" )  eta $eta  min   "'\r' >&2 ;
   tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
