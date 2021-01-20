@@ -45,6 +45,7 @@ test -f $countfile && {
     secrem=$((($timerans-$timeranm*60)%60));
     [[ 0 -eq "$timerans" ]] && timerans=1
     donecurrent=$(($mywinstart-$start))
+    [[ 0 -eq "$donecurrent" ]] && donecurrent=1
     tps=$(($timerans/$donecurrent))
     [[ 0 -eq "$tps" ]] && tps=1
     togo=$(($importlength-$mywinstart))
