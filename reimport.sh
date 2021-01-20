@@ -46,4 +46,4 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
 
   eta=$(($togo/$tps/60))
   echo -ne  "time $timerans ( $timeranm m $remsec s ) at $tps transactions/s: doing from line $mywinstart $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
-  tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywindowend ;done  2>&1
+  tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywindowend > $countfile ;done  2>&1
