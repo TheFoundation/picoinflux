@@ -32,21 +32,21 @@ test -f $countfile && {
     [[ -z "$start" ]] && echo "countfile empty" ;
     [[ -z "$start" ]] && exit 1;
      echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
-windowsize=30;
-importlength=$(cat $importfile|wc -l )
-rounds=$(($importlength/windowsize));
-echo rounds:$rounds;
-eta=unknown;
-for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
-  mywinend=$(($windowsize+$mywinstart));
-  timerans=$(($(date +%s -u )-$starttime));
-  timeranm=$(($timerans/60))
-  secrem=$((($timerans-$timeranm*60)%60));
-  [[ 0 -eq "$timerans" ]] && timerans=1
-  tps=$((($mywinstart-$start+1)/$timerans))
-  [[ 0 -eq "$tps" ]] && tps=1
-  togo=$(($importlength-$mywinstart))
-
-  eta=$(($togo/$tps/60))
-  echo -ne  "queue:( $timeranm m $secrem s ) at $tps transactions/s: doing lines: $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min   "'\r' >&2 ;
-  tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
+     windowsize=$2
+  [[ -z "$windowsize" ]] && windowsize=30
+  importlength=$(cat $importfile|wc -l )
+  rounds=$(($importlength/windowsize));
+  echo rounds:$rounds;
+  eta=unknown;
+  for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
+    mywinend=$(($windowsize+$mywinstart));
+    timerans=$(($(date +%s -u )-$starttime));
+    timeranm=$(($timerans/60))
+    secrem=$((($timerans-$timeranm*60)%60));
+    [[ 0 -eq "$timerans" ]] && timerans=1
+    tps=$((($mywinstart-$start+1)/$timerans))
+    [[ 0 -eq "$tps" ]] && tps=1
+    togo=$(($importlength-$mywinstart))
+    eta=$(($togo/$tps/60))
+    echo -ne  "queue:( $timeranm m $secrem s ) at $tps transactions/s: doing lines: $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min   "'\r' >&2 ;
+    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
