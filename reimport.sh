@@ -37,6 +37,7 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
   timerans=$(($(date +%s -u )-$starttime));  timeranm=$(($timerans/60))
   secrem=$((($timerans-$timeranm*60)%60));
   tps=$(($mywinstart-$start/$timerans))
+  [[ -z "$tps" ]] && tps=0
   togo=$(($importlength-$mywinstart))
   eta=$(($togo/$tps/60))
   echo -ne  "time $timeran m $remsec s at $tps transactions/s: doing from line $mywinstart $mywinend ( of $importlength )  eta $eta  min   "'\r' >&2 ;
