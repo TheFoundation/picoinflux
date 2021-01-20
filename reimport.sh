@@ -36,7 +36,7 @@ for mywinstart in $(seq $start $(cat $importfile|wc -l) )  ;  do
   mywinend=$(($windowsize+$mywinstart));
   timerans=$(($(date +%s -u )-$starttime));  timeranm=$(($timerans/60))
   secrem=$((($timerans-$timeranm*60)%60));
-  tps=$(($mywinstart-$start/$timerans))
+  tps=$(($mywinstart-$start+1/$timerans))
   [[ 0 -eq "$tps" ]] && tps=-2
   togo=$(($importlength-$mywinstart))
 
