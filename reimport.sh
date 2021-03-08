@@ -3,20 +3,19 @@ importfile=$1
 test -f $importfile || echo "no import file given"
 test -f $importfile || exit 1
 importfunction() {
-token=$(cat /dev/urandom |tr -cd '[:alnum:]'  |head -c48)
-cat > /dev/shm/.influxIMPORT.$token
-## sed 's/=/,host='"$hostname"' value=/g'
-##TRANSMISSION STAGE::
-##check config presence of secondary host and replicate
-grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
-        ( ( test -f /dev/shm/.influxIMPORT.$token && cat /dev/shm/.influxIMPORT.$token ; test -f /dev/shm/.influxIMPORT.$token.secondary && /dev/shm/.influxIMPORT.$token.secondary ) | sort |uniq > /dev/shm/.influxIMPORT.$token.tmp ;
-  mv /dev/shm/.influxIMPORT.$token.tmp /dev/shm/.influxIMPORT.$token.secondary )  ##
-
+    token=$(cat /dev/urandom |tr -cd '[:alnum:]'  |head -c48)
+    cat > /dev/shm/.influxIMPORT.$token
+    ## sed 's/=/,host='"$hostname"' value=/g'
+    ##TRANSMISSION STAGE::
+    ##check config presence of secondary host and replicate
+    grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
+        ( ( test -f /dev/shm/.influxIMPORT.$token && cat /dev/shm/.influxIMPORT.$token ;
+            test -f /dev/shm/.influxIMPORT.$token.secondary && /dev/shm/.influxIMPORT.$token.secondary ) | sort |uniq > /dev/shm/.influxIMPORT.$token.tmp ;
+        mv /dev/shm/.influxIMPORT.$token.tmp /dev/shm/.influxIMPORT.$token.secondary )  ##
         grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @/dev/shm/.influxIMPORT.$token.secondary 2>&1 && rm /dev/shm/.influxIMPORT.$token.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
-        (curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @/dev/shm/.influxIMPORT.$token.secondary 2>&1 && rm /dev/shm/.influxIMPORT.$token.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log
+        (curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @/dev/shm/.influxIMPORT.$token.secondary 2>&1 && rm /dev/shm/.influxIMPORT.$token.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log 
         )
-
-grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && rm /dev/shm/.influxIMPORT.$token 2>&1 ) >/dev/stderr  )  || ( \
+        grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && rm /dev/shm/.influxIMPORT.$token 2>&1 ) >/dev/stderr  )  || ( \
         (curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && rm /dev/shm/.influxIMPORT.$token 2>&1 ) >/dev/stderr  )
 
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @/dev/shm/.influxIMPORT.$token 2>&1 && mv /dev/shm/.influxIMPORT.$token /dev/shm/.influxIMPORT.$token.sent 2>&1 ) >/dev/stderr
@@ -57,4 +56,7 @@ test -f $countfile && {
     uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|wc -c)
     echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: done $donecurrent doing  transaction (size $uplsize Byte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min  $etasec s "'\r' >&2 ;
     sleep 0.05
-    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && echo ;echo $mywinend > $countfile ;done  2>&1
+    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && { echo "fail detected"        ; } ;
+    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { echo $mywinend > $countfile  ; } ;
+    
+    done  2>&1
