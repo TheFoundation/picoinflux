@@ -169,7 +169,7 @@ _sys_load_percent | grep -v =$ &
 ##TRANSMISSION STAGE::
 ## 
 ## shall we use a proxy ?
-grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f1 )
+grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f1 )
 
 ##check config presence of secondary host and replicate in that case
 grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
