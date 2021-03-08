@@ -1,6 +1,6 @@
 #!/bin/sh
 SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin/:/opt/bin:~/.bin
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
 
 TMPDATABASE=~/.influxdata
 ## if our storage is on sd card , we write to /dev/shm
@@ -177,18 +177,18 @@ grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYF
 
 ##check config presence of secondary host and replicate in that case
 grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
-    ( ( test -f $HOME/.influxdata && cat $HOME/.influxdata ; test -f $HOME/.influxdata.secondary && $HOME/.influxdata.secondary ) | sort |uniq > $HOME/.influxdata.tmp ;
-     mv $HOME/.influxdata.tmp $HOME/.influxdata.secondary )  ##
+    ( ( test -f ${TMPDATABASE} && cat ${TMPDATABASE} ; test -f ${TMPDATABASE}.secondary && ${TMPDATABASE}.secondary ) | sort |uniq > ${TMPDATABASE}.tmp ;
+     mv ${TMPDATABASE}.tmp ${TMPDATABASE}.secondary )  ##
 
-    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
-    (curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @$HOME/.influxdata.secondary 2>&1 && rm $HOME/.influxdata.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log
+    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
+    (curl -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log
     )
 
 
-grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )  || ( \
-        (curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
+grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )  || ( \
+        (curl -s -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
 
-#(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @$HOME/.influxdata 2>&1 && mv $HOME/.influxdata $HOME/.influxdata.sent 2>&1 ) >/tmp/picoinflux.log
+#(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} ${TMPDATABASE}.sent 2>&1 ) >/tmp/picoinflux.log
 
 
 
