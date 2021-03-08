@@ -30,33 +30,42 @@ test -f $countfile && {
     start=$(cat $countfile) ;
     [[ -z "$start" ]] && echo "countfile empty" ;
     [[ -z "$start" ]] && exit 1;
-     echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
-  windowsize=$2
-  [[ -z "$windowsize" ]] && windowsize=1000
-  echo "windowsize: $windowsize"
-  importlength=$(cat $importfile|wc -l )
-  rounds=$(($importlength/windowsize));
-  echo rounds:$rounds;
-  eta=unknown;
-  echo starting with seq $start $windowsize $(cat $importfile|wc -l)
-  for mywinstart in $(seq $start $windowsize $(cat $importfile|wc -l) )  ;  do
-    mywinend=$(($windowsize+$mywinstart));
-    timerans=$(($(date +%s -u)-$starttime));
-    timeranm=$(($timerans/60))
-    secrem=$((($timerans-$timeranm*60)%60));
-    [[ 0 -eq "$timerans" ]] && timerans=1
-    donecurrent=$(($mywinstart-$start))
-    [[ 0 -eq "$donecurrent" ]] && donecurrent=1
-    tps=$(($donecurrent/$timerans))
-    [[ 0 -eq "$tps" ]] && tps=1
-    togo=$(($importlength-$mywinstart))
-    secondsremain=$(($togo/$tps))
-    eta=$(($secondsremain/60))
-    etasec=$((($secondsremain-$eta*60)%60))
-    uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|wc -c)
-    echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: done $donecurrent doing  transaction (size $uplsize Byte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min  $etasec s "'\r' >&2 ;
-    sleep 0.05
-    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && { echo "fail detected"        ; } ;
-    tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { echo $mywinend > $countfile  ; } ;
+    echo re-startig from $start; let start+=1 || { echo "start was not a number , fix $countfile or just delete it to begin from start" ; } ; } ;
+    windowsize=$2
+    [[ -z "$windowsize" ]] && windowsize=1000
+    echo "windowsize: $windowsize"
+    importlength=$(cat $importfile|wc -l )
+    rounds=$(($importlength/windowsize));
+    echo rounds:$rounds;
+    eta=unknown;
+    echo starting with seq $start window: $windowsize length: $importlength
+    #for mywinstart in $(seq $start $windowsize $(cat $importfile|wc -l) )  ;  do
+    mywinstart=$start
+    while ( [[ $mywinstart -le $importlenght ]] );do 
     
-    done  2>&1
+      mywinend=$(($windowsize+$mywinstart));
+      
+      timerans=$(($(date +%s -u)-$starttime));
+      timeranm=$(($timerans/60))
+      secrem=$((($timerans-$timeranm*60)%60));
+      
+      [[ 0 -eq "$timerans" ]] && timerans=1
+      donecurrent=$(($mywinstart-$start))
+      [[ 0 -eq "$donecurrent" ]] && donecurrent=1   
+      tps=$(($donecurrent/$timerans))
+      [[ 0 -eq "$tps" ]] && tps=1
+      togo=$(($importlength-$mywinstart))
+      
+      secondsremain=$(($togo/$tps))
+      eta=$(($secondsremain/60))
+      etasec=$((($secondsremain-$eta*60)%60))
+      
+      uplsize=$(tail -n+$mywinstart $importfile |head -n$windowsize|wc -c)
+      
+      echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: done $donecurrent doing  transaction (size $uplsize Byte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min  $etasec s "'\r' >&2 ;
+      sleep 0.05
+      tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && { echo "fail detected"        ; } ;
+      tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { mywinstart=$(($mywinstart+$windowsize));echo $mywinend > $countfile  ; } ;
+      
+      done  2>&1
+    
