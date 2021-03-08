@@ -1,7 +1,11 @@
 #!/bin/sh
 SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin/:/opt/bin:~/.bin
 
+TMPDATABASE=~/.influxdata
+## if our storage is on sd card , we write to /dev/shm
+mount |grep -e boot -e " / "|grep -q mmc && TMPDATABASE=/dev/shm/.influxdata
+ 
 ##openwrt and other mini systems have no nansoeconds
 timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 
@@ -151,7 +155,7 @@ done
 
 
 wait
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done |grep value=  >> ~/.influxdata
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done |grep value=  >> ${TMPDATABASE}
 sleep 2
 
 
@@ -160,7 +164,7 @@ sleep 2
 _sys_memory_percent | grep -v =$ &
 _sys_load_percent | grep -v =$ &
   test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  |grep value= >> ~/.influxdata
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  |grep value= >> ${TMPDATABASE}
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
