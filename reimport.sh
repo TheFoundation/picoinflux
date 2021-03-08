@@ -65,7 +65,7 @@ test -f $countfile && {
       echo -ne  "     queue:( $timeranm m $secrem s ) at $tps transactions/s: done $donecurrent doing  transaction (size $uplsize Byte): $mywinstart -> $mywinend  of $importlength ( "$(awk 'BEGIN {print 100*'$mywinstart'/'$importlength'}' |head -c 6 ) " % )  eta $eta  min  $etasec s "'\r' >&2 ;
       sleep 0.05
       tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && { echo "fail detected"        ; } ;
-      tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { mywinstart=$(($mywinstart+$windowsize));echo $mywinend > $countfile  ; } ;
-      
+      tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { mywinstart=$(($mywinstart+$windowsize+1));echo $mywinend > $countfile  ; } ;
+      [[ -z "$sleeptime" ]] || sleep $sleeptime
       done  2>&1
     
