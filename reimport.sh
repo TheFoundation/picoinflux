@@ -41,7 +41,7 @@ test -f $countfile && {
     echo starting with seq $start window: $windowsize length: $importlength
     #for mywinstart in $(seq $start $windowsize $(cat $importfile|wc -l) )  ;  do
     mywinstart=$start
-    while ( [[ $mywinstart -le $importlenght ]] );do 
+    while ( [[ $mywinstart -le $importlength ]] );do 
     
       mywinend=$(($windowsize+$mywinstart));
       
