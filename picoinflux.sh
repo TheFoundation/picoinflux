@@ -65,18 +65,29 @@ _physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|s
 
 ###System
 	(
-	test -f /proc/uptime && echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
-	test -d /var/log/ && echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
-	test -d /var/log/apache2 && echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
-	test -d /var/log/nginx && echo "nginx_logsize="$(du -m -s /var/log/nginx  2>/dev/null|cut -d"/" -f1)
-	test -f /var/log/syslog && echo "syslog_lines="$(wc -l /var/log/syslog 2>/dev/null|cut -d " " -f1)
-	test -f /var/log/mail.log && echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
-	test -f /var/log/mail.err && echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
+	test -f /proc/uptime &&       echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
+	test -d /var/log/ &&          echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
+	test -d /var/log/apache2 &&   echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
+	test -d /var/log/nginx &&     echo "nginx_logsize="$(du -m -s /var/log/nginx  2>/dev/null|cut -d"/" -f1)
+	test -f /var/log/syslog &&    echo "syslog_lines="$(wc -l /var/log/syslog 2>/dev/null|cut -d " " -f1)
+	test -f /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
+	test -f /var/log/mail.err &&  echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
 	test -f /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
         test -f /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
 	test -f /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
 	test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 
+## Batter[y|ies]
+for batdir in /sys/class/power_supply/BAT*;do
+  mybat=$(basename ${batdir});
+  echo power_battery_health_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_full) / $(cat  /sys/class/power_supply/${mybat}/energy_full_design)   }")
+  echo power_battery_charge_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_now)  / $(cat  /sys/class/power_supply/${mybat}/energy_full)          }")
+  #echo power_battery_volt_${mybat}_minimum=$(cat  /sys/class/power_supply/${mybat}/voltage_min_design)
+  #echo power_battery_volt_${mybat}_current=$(cat  /sys/class/power_supply/${mybat}/voltage_now)
+  grep -i ^discharg /sys/class/power_supply/${mybat}/status -q && echo power_battery_volt_${mybat}_minutes_till_empty=$((60*$(cat /sys/class/power_supply/${mybat}/energy_now)/$(cat /sys/class/power_supply/${mybat}/power_now)))
+  grep -i    ^charg /sys/class/power_supply/${mybat}/status -q && echo power_battery_volt_${mybat}_minutes_till_full=$((60*($(cat /sys/class/power_supply/${mybat}/energy_full)-$(cat /sys/class/power_supply/${mybat}/energy_now))/$(cat /sys/class/power_supply/${mybat}/power_now)))
+  echo -n;
+done
   ##disks
   test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" 
 
@@ -166,22 +177,20 @@ grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization
 
 
 
-##picoinflux.conf examples (first line pass/token,second line url URL , rest is ignored except secondary config)
+## picoinflux.conf examples (FIRST LINE OF THE FILE(!!) is the pass/token,second line url URL , rest is ignored except secondary config and socks )
 ##example V1
 #user:buzzword
 #https://corlysis.com:8086/write?db=mydatabase
 
 
 
-##example V2
+## example V2
 #KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
 #https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
 #TOKEN=true
 
 
-
-
-##  add the following lines for a backup/secondary write with user/pass auth:
+### add the following lines for a backup/secondary write with user/pass auth:
 # SECONDARY=true
 # URL2=https://corlysis.com:8086/write?db=mydatabase
 # AUTH2=user:buzzword
@@ -194,3 +203,6 @@ grep -q "TOKEN=true" ~/.picoinflux.conf && ( (curl -s -k --header "Authorization
 # AUTH2=KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
 # TOKEN2=true
 #
+
+### to use socks proxy
+#PROXYFFLUX
