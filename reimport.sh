@@ -66,6 +66,6 @@ test -f $countfile && {
       sleep 0.05
       tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error && { echo "fail detected"        ; } ;
       tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { mywinstart=$(($mywinstart+$windowsize+1));echo $mywinend > $countfile  ; } ;
-      [[ -z "$sleeptime" ]] || sleep $sleeptime
+      [[ -z "$WAITRETRY" ]] || { echo sleeping $WAITRETRY ;sleep $WAITRETRY ; } ; 
       done  2>&1
     
