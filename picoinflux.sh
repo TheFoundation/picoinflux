@@ -141,7 +141,8 @@ done
   ## get dockerhub counts via api
   test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do which curl &>/dev/null  && ( curl -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' ;done|sed 's/^\["/dockerhub_pullcount,target=/g;s/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
 
-        ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do  docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ; nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n netstat -puteen | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline netstat -puteen |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$") &
+        ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do  
+                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$") &
 
 (
         ( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
