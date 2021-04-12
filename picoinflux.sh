@@ -5,7 +5,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bi
 TMPDATABASE=~/.influxdata
 ## if our storage is on sd card , we write to /dev/shm
 mount |grep -e boot -e " / "|grep -q mmc && TMPDATABASE=/dev/shm/.influxdata
- 
+
 ##openwrt and other mini systems have no nansoeconds
 timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 
@@ -14,7 +14,7 @@ timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;el
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
 # ADDITIONALLY set custom hostname in /etc/picoinfluxid
 
-## load 
+## load
 _sys_load_percent() {
     NCPU=$(which nproc &>/dev/null && nproc ||  (grep ^processor /proc/cpuinfo |wc -l) );
     LOAD_MID=$(cut /proc/loadavg -d" " -f2);
@@ -81,7 +81,7 @@ _physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|s
         test -f /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
         test -f /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
         test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
-## voltage 
+## voltage
 
 ## pi voltage
 which vcgencmd 2>&1 |grep -q vcgencmd && { vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
@@ -98,7 +98,7 @@ for batdir in /sys/class/power_supply/BAT*;do
   echo -n;
 done
   ##disks
-  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" 
+  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_"
 
   which smartctl&>/dev/null && { _physical_disks |while read disk;do  diskinfo=$(smartctl -A ${disk} 2>/dev/null) ;
                                               echo "$diskinfo" | awk '/Power_On_Hours/ {print "sys_disk_hours,target='${disk/\/dev\//}'="$NF}'
@@ -139,9 +139,24 @@ done
         for h in $(seq 0 31);do for i in $(seq 0 31);do test -f /sys/class/hwmon/hwmon$h/device/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/device/temp"$i"_input); test -f /sys/class/hwmon/hwmon$h/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/temp"$i"_input);done;done|sed 's/-263200//g'
 
   ## get dockerhub counts via api
-  test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do which curl &>/dev/null  && ( curl -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' ;done|sed 's/^\["/dockerhub_pullcount,target=/g;s/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
+  curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.0.1:9050|grep -q ^tcp && curlopts=" -x socks://127.0.0.1:9050 "
+  test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
+     which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
+        for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
+	curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME_'/g;' ;
+	done
+        echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
+	done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
 
-        ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do  
+
+	curl -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME_'/g;' ;
+	done
+        echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
+	done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
+
+
+##docker netstat
+        ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do
                        docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$") &
 
 (
@@ -172,7 +187,7 @@ _sys_load_percent | grep -v =$ &
 
 
 ##TRANSMISSION STAGE::
-## 
+##
 ## shall we use a proxy ?
 grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
 
