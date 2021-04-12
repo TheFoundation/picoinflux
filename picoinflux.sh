@@ -144,7 +144,7 @@ done
            which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
               for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
                       imageresult=$(curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1")
-                        echo "$imageresult" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_repositorysize,target='$ORGNAME'_'$IMAGE'_/g;' ;
+                        echo "$imageresult" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_reposize,target='$ORGNAME'_'$IMAGE'_/g;' ;
                         for tag in $(echo "$imageresult" |  jq -c '.results[]  | .name' |cut -d'"' -f2) ;do
 
                           timegrid=$(echo "$imageresult" |jq -c '.results[] | .images[]|[.last_pushed,.architecture,.size]  ')
