@@ -143,7 +143,7 @@ done
   test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
      which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
         for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
-	curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME_'/g;' ;
+		curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_/g;' ;
 	done
         echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
 	done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
