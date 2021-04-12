@@ -68,3 +68,4 @@ test -f $countfile && {
       tail -n+$mywinstart $importfile |head -n$windowsize |importfunction 2>&1|grep -i -e fail -e error || { mywinstart=$(($mywinstart+$windowsize+1));echo $mywinend > $countfile  ; } ;
       done  2>&1
 rm "${importfile}"
+rm "${importfile}.count"
