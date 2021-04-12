@@ -138,15 +138,34 @@ done
         for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done|sed 's/-263200//g'
         for h in $(seq 0 31);do for i in $(seq 0 31);do test -f /sys/class/hwmon/hwmon$h/device/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/device/temp"$i"_input); test -f /sys/class/hwmon/hwmon$h/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/temp"$i"_input);done;done|sed 's/-263200//g'
 
-  ## get dockerhub counts via api
-  curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.0.1:9050|grep -q ^tcp && curlopts=" -x socks://127.0.0.1:9050 "
-  test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
-     which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
-        for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
-		curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_/g;' ;
-	done
-        echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
-	done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
+        ## get dockerhub counts via api
+        curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.0.1:9050|grep -q ^tcp && curlopts=" -x socks://127.0.0.1:9050 "
+        test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
+           which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
+              for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
+                      imageresult=$(curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1")
+                        echo "$imageresult" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_repositorysize,target='$ORGNAME'_'$IMAGE'_/g;' ;
+                        for tag in $(echo "$imageresult" |  jq -c '.results[]  | .name' |cut -d'"' -f2) ;do
+
+                          timegrid=$(echo "$imageresult" |jq -c '.results[] | .images[]|[.last_pushed,.architecture,.size]  ')
+
+                        #images=$(echo "$imageresult" |  jq -c '.results[]  | .images[]' |jq .)
+                         #echo grid:
+                        gridout=$(                  echo "$timegrid"|cut -d'"' -f1,3-|tail -n 3|sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_'${tag// /_}'_/g;s/_,"/_/g' ;)
+
+                        for gridkey in $(echo "$gridout"|cut -d"=" -f1,2|cut -d'"' -f1|sort -u);do
+      #echo "KEY:$gridkey" >&2;echo
+                            echo "$gridout"|grep "$gridkey"|tail -n1
+                          done
+
+                        #echo "tagged: $tag"
+      #                  echo "$images" |  jq -c '[.architecture,.size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_'${tag// /_}'_/g;' ;
+                        done
+
+              done
+              echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
+              done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done  &
+
 
 ##docker netstat
         ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do
