@@ -164,7 +164,7 @@ done
 
 
 wait
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done |grep value=  >> ${TMPDATABASE}
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done |grep value=  |grep -E ' [0-9]{19}$' >> ${TMPDATABASE}
 sleep 2
 
 
@@ -173,7 +173,7 @@ sleep 2
 _sys_memory_percent | grep -v =$ &
 _sys_load_percent | grep -v =$ &
   test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  |grep value= >> ${TMPDATABASE}
+) 2>/dev/null |grep -v =$| while read linein;do echo "${linein}" | sed 's/\(.*\)=/\1,host='"$hostname"' value=/'|sed 's/$/ '$(timestamp_nanos)'/g' ;done  |grep value=  |grep -E ' [0-9]{19}$' >> ${TMPDATABASE}
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
