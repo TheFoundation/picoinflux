@@ -213,16 +213,16 @@ echo;echo "${loadpercent}" |tee /dev//shm/.influxraw.data
 echo;echo "${cpufreq}"        |tee /dev//shm/.influxraw.data
 echo;echo "${mem}"           |tee /dev//shm/.influxraw.data
 echo;echo "${voltage}"       |tee /dev//shm/.influxraw.data
-echo;echo "${network}"
-echo;echo "${connections}"
-echo;echo "${network}"
-echo;echo "${disks}"
-echo;echo "${vnstat}"
-echo;echo "${system}"
-echo;echo "${ping}"
-echo;echo "${dockersyspercent}"
-echo;echo "${dockerram}"
-echo;echo "${dockernet}"
+echo;echo "${network}" |tee /dev//shm/.influxraw.data
+echo;echo "${connections}" |tee /dev//shm/.influxraw.data
+echo;echo "${network}" |tee /dev//shm/.influxraw.data
+echo;echo "${disks}" |tee /dev//shm/.influxraw.data
+echo;echo "${vnstat}" |tee /dev//shm/.influxraw.data
+echo;echo "${system}" |tee /dev//shm/.influxraw.data
+echo;echo "${ping}"|tee /dev//shm/.influxraw.data
+echo;echo "${dockersyspercent}"|tee /dev//shm/.influxraw.data
+echo;echo "${dockerram}"|tee /dev//shm/.influxraw.data
+echo;echo "${dockernet}"|tee /dev//shm/.influxraw.data
 
 
 )  2>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
