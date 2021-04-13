@@ -160,6 +160,7 @@ network=$(_networkstats) 2>/dev/shm/picoinflux.stderr.run.log &
 voltage=$(_voltage)      2>/dev/shm/picoinflux.stderr.run.log &
 disks=$(_diskstats)      2>/dev/shm/picoinflux.stderr.run.log &
 system=$(_sysstats)      2>/dev/shm/picoinflux.stderr.run.log &
+sleep 2
 
 ### end system fork
 connections=$(
@@ -182,6 +183,7 @@ ping=$( ##ipv4 thread
 ## get dockerhub counts via api
 dockerhub=$(_dockerhubstats) 2>/dev/shm/picoinflux.stderr.run.log  &
 
+sleep 2
 
 ##docker netstat
 dockernet=$( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do
@@ -193,6 +195,8 @@ dockersyspercent=$(
 
         ( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
   echo  ) 2>/dev/shm/picoinflux.stderr.run.log &
+
+sleep 1
 
 ### RAM Mbytez
 ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
