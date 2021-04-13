@@ -208,11 +208,11 @@ dockerram=$(
 
 wait
 
-echo;echo "${load}"
-echo;echo "${loadpercent}"
-echo;echo "${cpufreq}"
-echo;echo "${mem}"
-echo;echo "${voltage}"
+echo;echo "${load}"          |tee /dev//shm/.influxraw.data
+echo;echo "${loadpercent}" |tee /dev//shm/.influxraw.data
+echo;echo "${cpufreq}"        |tee /dev//shm/.influxraw.data
+echo;echo "${mem}"           |tee /dev//shm/.influxraw.data
+echo;echo "${voltage}"       |tee /dev//shm/.influxraw.data
 echo;echo "${network}"
 echo;echo "${connections}"
 echo;echo "${network}"
@@ -225,7 +225,7 @@ echo;echo "${dockerram}"
 echo;echo "${dockernet}"
 
 
-)  2>/dev/shm/picoinflux.stderr.run.log |tee /dev//shm/.influxraw.data|grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+)  2>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
 
 
 sleep 6
