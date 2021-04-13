@@ -42,7 +42,7 @@ _voltage() {
 which vcgencmd 2>&1 |grep -q vcgencmd && { vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
 
 ## Batter[y|ies]
-for batdir in /sys/class/power_supply/BAT*;do
+for batdir in $(ls -1 /sys/class/power_supply/BAT*);do
   mybat=$(basename ${batdir});
   echo power_battery_health_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_full) / $(cat  /sys/class/power_supply/${mybat}/energy_full_design)   }")
   echo power_battery_charge_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_now)  / $(cat  /sys/class/power_supply/${mybat}/energy_full)          }")
