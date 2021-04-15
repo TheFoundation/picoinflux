@@ -201,7 +201,6 @@ sleep 2
   echo   >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 sleep 1
-
 ### RAM Mbytez
 ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
 (
@@ -210,7 +209,7 @@ sleep 1
 
 
 
-) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value=" # |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{19}$' >> ${TMPDATABASE}
 
 
 sleep 6
@@ -219,7 +218,7 @@ sleep 6
 _sys_memory_percent | grep -v =$ &
 _sys_load_percent | grep -v =$ &
   test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-  ) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+  ) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{19}$' >> ${TMPDATABASE}
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
