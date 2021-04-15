@@ -101,13 +101,13 @@ _sysstats() {
         test -d /var/log/ &&          echo "logdir_size="$(du -m -s /var/log/ 2>/dev/null|cut -d"/" -f1)
         test -d /var/log/apache2 &&   echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
         test -d /var/log/nginx &&     echo "nginx_logsize="$(du -m -s /var/log/nginx  2>/dev/null|cut -d"/" -f1)
-        test -f /var/log/syslog &&    echo "syslog_lines="$(wc -l /var/log/syslog 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/mail.err &&  echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
-        test -f /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
-        test -f /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/syslog &&    echo "syslog_lines="$(wc -l /var/log/syslog 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/mail.err &&  echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
+        test -e /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 ## temperatures
         # intel nuc new gen reports -263200 on temp0 for no reason
               for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done|sed 's/-263200//g'
