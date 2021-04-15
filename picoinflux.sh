@@ -206,7 +206,7 @@ sleep 1
 
 
 
-)  2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+)  2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' #>> ${TMPDATABASE}
 
 
 sleep 6
