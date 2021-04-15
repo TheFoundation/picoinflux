@@ -146,22 +146,16 @@ echo ;};
 (
 
 ( test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';) ) &
-
-
+wait
 ##vnstat first, runs in background
 (which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' )) &
 ###System
-(_sys_load_percent | grep -v =$) &
 
 (c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g';
-          for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done ) 2>>/dev/shm/picoinflux.stderr.run.log &
-test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g')) 2>>/dev/shm/picoinflux.stderr.run.log &
-(_networkstats) 2>>/dev/shm/picoinflux.stderr.run.log &
-(_voltage)      2>>/dev/shm/picoinflux.stderr.run.log &
-(_diskstats)      2>>/dev/shm/picoinflux.stderr.run.log &
-(_sysstats)      2>>/dev/shm/picoinflux.stderr.run.log &
-sleep 2
+for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done ) 2>>/dev/shm/picoinflux.stderr.run.log &
+test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g') 2>>/dev/shm/picoinflux.stderr.run.log &
 
+(_sys_load_percent | grep -v =$) &
 ### end system fork
 (
         which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
@@ -174,6 +168,12 @@ sleep 2
         echo "ping_ipv4,target=Level3DNS"$(ping 4.2.2.4 -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
         echo "ping_ipv4,target=GoogleDNS"$(ping 8.8.8.8 -c 2 -w 2  -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
         ) 2>>/dev/shm/picoinflux.stderr.run.log &
+
+(_networkstats) 2>>/dev/shm/picoinflux.stderr.run.log &
+(_voltage)      2>>/dev/shm/picoinflux.stderr.run.log &
+(_diskstats)      2>>/dev/shm/picoinflux.stderr.run.log &
+(_sysstats)      2>>/dev/shm/picoinflux.stderr.run.log &
+sleep 2
 
         ( ## ipv6 thread
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep " via "|grep -q " metric " && echo "ping_ipv6,target=he.net"$(ping6 he.net -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" ))
@@ -205,8 +205,6 @@ sleep 1
         val=$(echo ${line##*=}|sed 's/iB$//g;s/B$//' |numfmt --from=iec) ;echo ${line%=*}"="$(awk 'BEGIN{print '$val/1024/1024'}') ;done ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 
-
-wait
 
 )  2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep value=  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
 
