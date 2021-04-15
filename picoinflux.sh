@@ -4,7 +4,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bi
 
 TMPDATABASE=~/.influxdata
 ## if our storage is on sd card , we write to /dev/shm
-mount |grep -e boot -e " / "|grep -q mmc && TMPDATABASE=/dev/shm/.influxdata
+mount |grep -e boot -e " / "|grep -q -e mmc -e ^overlay && TMPDATABASE=/dev/shm/.influxdata
 
 ##openwrt and other mini systems have no nansoeconds
 timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
