@@ -207,6 +207,7 @@ dockerram=$(
 
 
 wait
+echo "${load}"  >&2
 echo > /dev//shm/.influxraw.data
 echo;echo "${load}"          |tee -a /dev//shm/.influxraw.data
 echo;echo "${loadpercent}" |tee -a /dev//shm/.influxraw.data
