@@ -144,6 +144,10 @@ echo ;};
 
 ######### main  ####################'
 (
+## catch stdio from subshells here
+exec 5>&1
+exec 6>&1
+exec 7>&1
 
 ( test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';) ) &
 wait
@@ -152,8 +156,8 @@ wait
 ###System
 
 (c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g';
-for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done ) 2>>/dev/shm/picoinflux.stderr.run.log &
-test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g') 2>>/dev/shm/picoinflux.stderr.run.log &
+for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done  >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
+test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g'  >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 (_sys_load_percent | grep -v =$) &
 ### end system fork
@@ -162,14 +166,14 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
         test -f /proc/1/net/tcp && echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1)
         test -f /proc/1/net/udp && echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
         test -f /proc/1/net/nf_conntrack && echo "conntrack_connections="$(wc -l /proc/1/net/nf_conntrack|grep -v 127.0.0.1|cut -d" " -f1)
-        ) 2>>/dev/shm/picoinflux.stderr.run.log &
+         >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 ( ##ipv4 thread
         echo "ping_ipv4,target=Level3DNS"$(ping 4.2.2.4 -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
         echo "ping_ipv4,target=GoogleDNS"$(ping 8.8.8.8 -c 2 -w 2  -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
-        ) 2>>/dev/shm/picoinflux.stderr.run.log &
+         >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
-(_networkstats) 2>>/dev/shm/picoinflux.stderr.run.log &
+(_networkstats >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 (_voltage)      2>>/dev/shm/picoinflux.stderr.run.log &
 (_diskstats)      2>>/dev/shm/picoinflux.stderr.run.log &
 (_sysstats)      2>>/dev/shm/picoinflux.stderr.run.log &
@@ -179,22 +183,22 @@ sleep 2
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep " via "|grep -q " metric " && echo "ping_ipv6,target=he.net"$(ping6 he.net -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" ))
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep " via "|grep -q " metric " && echo "ping_ipv6,target=google.com"$(ping6 google.com -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" ))
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep " via "|grep -q " metric " && echo "ping_ipv6,target=heise.de"$(ping6 heise.de -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" ))
-        ) 2>>/dev/shm/picoinflux.stderr.run.log &
+         >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 ## get dockerhub counts via api
-(_dockerhubstats) 2>>/dev/shm/picoinflux.stderr.run.log  &
+(_dockerhubstats >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 
 sleep 2
 
 ##docker netstat
 ( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do
-                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$") 2>>/dev/shm/picoinflux.stderr.run.log &
+                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 ##docker memory and cpu percent
 (
         ( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
 
         ( docker=$(which docker) && $docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
-  echo  ) 2>>/dev/shm/picoinflux.stderr.run.log &
+  echo   >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 sleep 1
 
@@ -202,11 +206,11 @@ sleep 1
 ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
 (
     ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  ) |while read line;do
-        val=$(echo ${line##*=}|sed 's/iB$//g;s/B$//' |numfmt --from=iec) ;echo ${line%=*}"="$(awk 'BEGIN{print '$val/1024/1024'}') ;done ) 2>>/dev/shm/picoinflux.stderr.run.log &
+        val=$(echo ${line##*=}|sed 's/iB$//g;s/B$//' |numfmt --from=iec) ;echo ${line%=*}"="$(awk 'BEGIN{print '$val/1024/1024'}') ;done  >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 
 
-)  2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
 
 
 sleep 6
@@ -215,7 +219,7 @@ sleep 6
 _sys_memory_percent | grep -v =$ &
 _sys_load_percent | grep -v =$ &
   test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';)
-) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
+  ) 2>>/dev/shm/picoinflux.stderr.run.log |grep -v ^$ |grep -v =$| sed  's/\(.*\)=/\1,host='"$hostname"' value=/'|sed  's/$/ '$(timestamp_nanos)'/g'  |grep " value="  |grep -E ' [0-9]{18}$' >> ${TMPDATABASE}
 
 ## sed 's/=/,host='"$hostname"' value=/g'
 
