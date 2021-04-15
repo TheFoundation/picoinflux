@@ -149,9 +149,9 @@ echo ;};
 
 
 ##vnstat first, runs in background
-$(which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' )) &
+(which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' )) &
 ###System
-$(_sys_load_percent | grep -v =$) &
+(_sys_load_percent | grep -v =$) &
 
 (c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g';
           for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq && echo "cpufreq_"$i"="$(cat /sys/devices/system/cpu/cpufreq/policy$i/scaling_cur_freq);done ) 2>>/dev/shm/picoinflux.stderr.run.log &
