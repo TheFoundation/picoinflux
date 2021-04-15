@@ -160,6 +160,7 @@ for i in $(seq 0 31);do test -f /sys/devices/system/cpu/cpufreq/policy$i/scaling
 test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 's/ \+//g;s/:/=/g;s/kB$//g'  >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 (_sys_load_percent | grep -v =$) &
+
 ### end system fork
 (
         which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
@@ -177,6 +178,12 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 (_voltage)      2>>/dev/shm/picoinflux.stderr.run.log &
 (_diskstats)      2>>/dev/shm/picoinflux.stderr.run.log &
 (_sysstats)      2>>/dev/shm/picoinflux.stderr.run.log &
+
+
+##fanspeed from hwmon
+for fansp in /sys/devices/virtual/hwmon/hwmon*/fan1_input; do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
+
+
 sleep 2
 
         ( ## ipv6 thread
