@@ -70,8 +70,10 @@ _networkstats() { ### network
         which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
         echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
 
-
+###wireless client
         test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g')
+# wireless sta
+which iw &>/dev/null && { iw dev wlan0 station dump |grep -e Station -e signal |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= ; } ;
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
         echo  ;};
