@@ -73,7 +73,7 @@ _networkstats() { ### network
 ###wireless client
         test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g') |grep -v "=0$"
 # wireless sta
-which iw &>/dev/null && { iw dev wlan0 station dump |grep -e Station -e signal |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= ; } ;
+ which iw &>/dev/null && { for mydev in $(cat /proc/net/dev|cut -d: -f1|grep -e wlp -e wlan -e wifi );do iw dev $mydev station dump ;done|grep -e Station -e signal|grep -v lastack |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|grep -v lastack|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= |while read result ;do mac=$(echo ${result//*level_sta_/}|cut -d "_" -f1);macsum=$(echo $mac|md5sum |cut -d" " -f1);echo $result|sed 's/'$mac'/'$macsum'/g';done ; } ;
 ## wan tx/rx
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
