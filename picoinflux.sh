@@ -1,7 +1,7 @@
 #!/bin/sh
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
-
+echo >/dev/shm/picoinflux.stderr.run.log
 TMPDATABASE=~/.influxdata
 ## if our storage is on sd card , we write to /dev/shm
 mount |grep -e boot -e " / "|grep -q -e mmc -e ^overlay && TMPDATABASE=/dev/shm/.influxdata
