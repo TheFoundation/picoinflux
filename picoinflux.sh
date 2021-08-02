@@ -175,6 +175,8 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 ( ##ipv4 thread
         echo "ping_ipv4,target=Level3DNS"$(ping 4.2.2.4 -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
         echo "ping_ipv4,target=GoogleDNS"$(ping 8.8.8.8 -c 2 -w 2  -c 2 -w 2  2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
+        test -e /etc/picoinflux.icmp.targets && for target in $(cat /etc/picoinflux.icmp.targets);do 
+        echo "ping_ipv4,target=$target"$(ping $target -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23");
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 (_networkstats >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
