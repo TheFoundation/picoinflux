@@ -156,7 +156,7 @@ exec 7>&1
 ( test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';) ) &
 wait
 ##vnstat first, runs in background
-  (which vnstat >/dev/null && ( vnstat --oneline -tr 3 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" |grep -e kbit -e Mbit| sed 's/ \+/ /g;s/^ \+//g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit.\+\/s//g;s/Mbit\/s.\+//g;s/rx=/rx=-/g;s/ \+//g' )) &
+  (which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" |grep -e kbit -e Mbit| sed 's/ \+/ /g;s/^ \+//g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit.\+\/s//g;s/Mbit\/s.\+//g;s/rx=/rx=-/g;s/ \+//g' )) &
 ###System
 
 (c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g';
