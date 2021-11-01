@@ -42,7 +42,7 @@ _voltage() {
 which vcgencmd 2>&1 |grep -q vcgencmd && { vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
 
 ## Batter[y|ies]
-for batdir in $(ls -1d /sys/class/power_supply/BAT*);do
+for batdir in $(ls -1d /sys/class/power_supply/BAT* 2>/dev/null);do
   mybat=$(basename ${batdir});
   echo power_battery_health_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_full) / $(cat  /sys/class/power_supply/${mybat}/energy_full_design)   }")
   echo power_battery_charge_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_now)  / $(cat  /sys/class/power_supply/${mybat}/energy_full)          }")
@@ -155,7 +155,7 @@ exec 7>&1
 ( test -f /proc/loadavg && (cat /proc/loadavg |cut -d" " -f1-3|sed 's/^/load_shortterm=/g;s/ /;load_midterm=/;s/ /;load_longterm=/;s/;/\n/g';) ) &
 wait
 ##vnstat first, runs in background
-(which vnstat >/dev/null && ( vnstat --oneline -tr 30 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" | sed 's/ \+/ /g;s/^ \+//g;s/bit\/s.\+/bit/g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit//g;s/Mbit//g;s/ //g;s/rx=/rx=-/g' )) &
+  (which vnstat >/dev/null && ( vnstat --oneline -tr 3 2>&1 |grep -v -e ^$ -e ^Traffic -e ^Ŝampling|grep "packets/s" |grep -e kbit -e Mbit| sed 's/ \+/ /g;s/^ \+//g;s/,/./g;s/^\(r\|t\)x/traffic_vnstat_live_30s_\0=/g;s/\..\+ Mbit/000\0/g;s/ kbit.\+\/s//g;s/Mbit\/s.\+//g;s/rx=/rx=-/g;s/ \+//g' )) &
 ###System
 
 (c=0;grep ogomip /proc/cpuinfo|while read a;do a=${a// /};echo ${a//:/_$c"="};let c+=1;done |sed 's/ //g;s/\t//g';
@@ -188,7 +188,7 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 
 
 ##fanspeed from hwmon
-for fansp in /sys/devices/virtual/hwmon/hwmon*/fan1_input; do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
+for fansp in (find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>&dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
 
 
 sleep 2
@@ -204,7 +204,7 @@ sleep 2
 sleep 2
 
 ##docker netstat
-( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 | while read contline;do
+( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+1 |grep -v ^$| while read contline;do
                        docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( $nsenter -t $( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 ##docker memory and cpu percent
