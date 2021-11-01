@@ -2,6 +2,7 @@
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
 echo >/dev/shm/picoinflux.stderr.run.log
+
 TMPDATABASE=~/.influxdata
 ## if our storage is on sd card , we write to /dev/shm
 mount |grep -e boot -e " / "|grep -q -e mmc -e ^overlay && TMPDATABASE=/dev/shm/.influxdata
@@ -188,7 +189,7 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 
 
 ##fanspeed from hwmon
-for fansp in (find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>&dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
+for fansp in $(find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>&dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
 
 
 sleep 2
