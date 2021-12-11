@@ -170,7 +170,7 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
         which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
         test -f /proc/1/net/tcp && echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1)
         test -f /proc/1/net/udp && echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
-        test -f /proc/1/net/nf_conntrack && echo "conntrack_connection_inits="$(grep -v -e ::1 -e 127.0.0.1  /proc/1/net/nf_conntrack| wc-l)
+        test -f /proc/1/net/nf_conntrack && echo "conntrack_connection_inits="$(grep -v -e ::1 -e 127.0.0.1  /proc/1/net/nf_conntrack| wc -l)
         test -f /proc/net/nf_conntrack &&   echo "conntrack_connections="$(grep -v -e ::1 -e 127.0.0.1 /proc/net/nf_conntrack|wc -l)
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
