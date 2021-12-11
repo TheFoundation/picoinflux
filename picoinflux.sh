@@ -69,7 +69,7 @@ _networkstats() { ### network
 
         which apt >/dev/null && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
         which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
-        echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|while read a;do printf "%02d" $a;done)
+        echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|grep -v '+'|while read a;do printf "%02d" $a;done)
 
 ###wireless client
         test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g') |grep -v "=0$"
@@ -109,7 +109,7 @@ _sysstats() {
         test -e /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.err &&  echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
-        test -e /var/log/mail.log &&  echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l)
+        test -e /var/log/mail.log &&  { echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l) ; } ;
         test -e /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 ## temperatures
@@ -119,7 +119,8 @@ _sysstats() {
 echo ;};
 
 _dockerhubstats() {        curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.0.1:9050|grep -q ^tcp && curlopts=" -x socks://127.0.0.1:9050 "
-        test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
+        test /etc/pico.dockerhub.conf && which jq &>/dev/null  &&  {
+        for ORGNAME in $(cat /etc/pico.dockerhub.conf |grep -v ^$);do
            which curl &>/dev/null  && ( curl ${curlopts} -s https://hub.docker.com/v2/repositories/${ORGNAME}/|jq --compact-output '.results  | to_entries[]' |while read imageline ;do
               for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
                       imageresult=$(curl ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1")
@@ -140,10 +141,10 @@ _dockerhubstats() {        curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.
                         #echo "tagged: $tag"
       #                  echo "$images" |  jq -c '[.architecture,.size]' |sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_'${tag// /_}'_/g;' ;
                         done
-
-              done
               echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
               done|sed 's/","/_/g;s/\]//g;s/",/=/g'  ) ;done
+
+      done ; } ;
 echo ;};
 
 ######### main  ####################'
@@ -189,7 +190,7 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 
 
 ##fanspeed from hwmon
-for fansp in $(find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>&dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
+for fansp in $(find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>&/dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
 
 
 sleep 2
