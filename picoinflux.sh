@@ -74,7 +74,11 @@ _networkstats() { ### network
 ###wireless client
         test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g') |grep -v "=0$"
 # wireless sta
- which iw &>/dev/null && { for mydev in $(cat /proc/net/dev|cut -d: -f1|grep -e wlp -e wlan -e wifi );do iw dev $mydev station dump ;done|grep -e Station -e signal|grep -v lastack |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|grep -v lastack|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= |while read result ;do mac=$(echo ${result//*level_sta_/}|cut -d "_" -f1);macsum=$(echo $mac|md5sum |cut -d" " -f1);echo $result|sed 's/'$mac'/'$macsum'/g';done ; } ;
+ which iw &>/dev/null && {
+      for mydev in $(cat /proc/net/dev|cut -d: -f1|sed 's/^ \+//g'|grep -e ^iwl -e ^wl -e ^wlan -e ^wifi -e ^ap );do
+          iw dev $mydev station dump ;done|grep -e Station -e signal|grep -v lastack |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|grep -v lastack|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= |while read result ;do mac=$(echo ${result//*level_sta_/}|cut -d "_" -f1);macsum=$(echo $mac|md5sum |cut -d" " -f1);echo $result|sed 's/'$mac'/'$macsum'/g';done ; } ;
+
+
 ## wan tx/rx
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
         test -f /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
@@ -250,9 +254,8 @@ grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
      mv ${TMPDATABASE}.tmp ${TMPDATABASE}.secondary )  ##
     PROXYSTRING=""
     grep -q ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf && PROXYSTRING='-x '$(grep ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
-    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl $PROXYSTRING -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )  || ( \
-    (curl $PROXYSTRING -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log
-    )
+    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( (curl $PROXYSTRING -s -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )
+    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf || ( (curl $PROXYSTRING -s -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log   )
 
     grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && PROXYSTRING='-x '$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
 
