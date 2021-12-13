@@ -252,13 +252,14 @@ _sys_load_percent | grep -v =$ &
 ##TRANSMISSION STAGE::
 ##
 ## shall we use a proxy ?
-grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
+##grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && export ALL_PROXY=$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
+
+PROXYSTRING=""
 
 ##check config presence of secondary host and replicate in that case
 grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
     ( ( test -f ${TMPDATABASE} && cat ${TMPDATABASE} ; test -f ${TMPDATABASE}.secondary && cat ${TMPDATABASE}.secondary ) | sort |uniq > ${TMPDATABASE}.tmp ;
      mv ${TMPDATABASE}.tmp ${TMPDATABASE}.secondary )  ##
-    PROXYSTRING=""
     grep -q ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf && PROXYSTRING='-x '$(grep ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
     grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( echo using header auth > /dev/shm/piconiflux.secondary.log; (curl $PROXYSTRING -v -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )
     grep -q "^TOKEN2=true" $HOME/.picoinflux.conf || ( echo using passwd auth > /dev/shm/piconiflux.secondary.log; (curl $PROXYSTRING -v -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log   )
