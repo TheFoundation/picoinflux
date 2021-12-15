@@ -71,12 +71,18 @@ _networkstats() { ### network
         which opkg >/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
         echo "kernel_revision="$(uname -r |cut -d"." -f1|tr -d '\n'; echo -n ".";uname -r |tr  -d 'a-z'|cut -d"." -f2- |sed 's/-$//g'|sed 's/\(\.\|-\)/\n/g'|grep -v '+'|while read a;do printf "%02d" $a;done)
 
-###wireless client
-        test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_/g;s/:/=/g;s/ //g') |grep -v "=0$"
-# wireless sta
+###wireless from proc
+        test -f /proc/1/net/wireless && (cat /proc/1/net/wireless |sed 's/ \+/ /g;s/^ //g'|grep :|cut -d" " -f1,4|sed 's/\.//g'|sed 's/^/wireless_level_proc_/g;s/:/=/g;s/ //g') |grep -v "=0$"
+# wireless from iw
  which iw &>/dev/null && {
+	 wlbuf="";
       for mydev in $(cat /proc/net/dev|cut -d: -f1|sed 's/^ \+//g'|grep -e ^iwl -e ^wl -e ^wlan -e ^wifi -e ^ap );do
-          iw dev $mydev station dump ;done|grep -e Station -e signal|grep -v lastack |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_sta_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g'|grep -v lastack|while read sta ;do read sig ;read avg;echo $sta"_"$sig;echo $sta"_"$avg;done|sed 's/: /=/g'|grep -e signal= -e avg= |while read result ;do mac=$(echo ${result//*level_sta_/}|cut -d "_" -f1);macsum=$(echo $mac|md5sum |cut -d" " -f1);echo $result|sed 's/'$mac'/'$macsum'/g';done ; } ;
+          wlprefix="";wlbuf="";
+          iw dev $mydev station dump |grep -e Station -e signal|grep -v -e beaconsignal -e lastack |cut -d"[" -f1|sed 's/(on /_/g;s/)//g;s/^Station \(..\):\(..\):\(..\):\(..\):\(..\):\(..\)/wireless_level_iw_\1\2\3\4\5\6/g;s/ avg:/_avg:/g;s/ //g;s/dBm//g'|while read line ;do echo "$line"|grep -q ^wireless_level && { wlprefix="$line" ; } ; echo "$line"|grep -q ^wireless_level  || { echo ${wlprefix}_${line} ; }  ;done|sed 's/: /=/g'|grep -e signal= -e avg= |while read result ;do
+          mac=$(echo ${result//*level_sta_/}|cut -d "_" -f4);
+          macsum=$(echo $mac|md5sum |cut -d" " -f1);
+          echo $result|sed 's/'$mac'/'$macsum'/g';done ; done; } ;
+
 
 
 ## wan tx/rx
