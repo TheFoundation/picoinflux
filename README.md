@@ -1,6 +1,9 @@
 # picoinflux
 ### `minimalistic monitoring with curl to influxdb`
-
+## features
+* can monitor dockerhub imagesize
+* battery health
+* 30 secons vnstat measurements
 
 ## **Installing(example):**
 
