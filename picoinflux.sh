@@ -86,8 +86,8 @@ _networkstats() { ### network
 
 
 ## wan tx/rx
-        test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }' )/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/tx_bytes)
-        test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }' )/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route)/statistics/rx_bytes)
+        test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }'|head -n1 )/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route|head -n1)/statistics/tx_bytes)
+        test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }'|head -n1 )/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route|head -n1)/statistics/rx_bytes)
         echo  ;};
 
 _diskstats() {
