@@ -222,9 +222,10 @@ sleep 1
 
 
 ##docker netstat
-( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+2 |grep -v ^$| while read contline;do
-                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( nsenttarget=$( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) ; [[ -z "$nsenttarget" ]] || $nsenter -t $nsenttarget -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
-
+#( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+2 |grep -v ^$| while read contline;do
+#                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( nsenttarget=$( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) ; [[ -z "$nsenttarget" ]] || $nsenter -t $nsenttarget -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
+##GTFO nsenter
+( docker=$(which docker) && $docker ps --format "{{.Names}}" |tail -n+2 |grep -v ^$| while read contline;do $docker container inspect $contline|grep '"NetworkMode": "host"' -q  ||( echo $( echo -n $contline":" ; $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) );done |sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
 (
   ##docker memory and cpu percent
   ( docker=$(which docker) && $docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
