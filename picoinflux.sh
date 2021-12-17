@@ -40,7 +40,7 @@ _physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|s
 _voltage() {
 
 ## pi voltage
-vcgencmd=$(which vcgencmd 2>/dev/null )  && { $vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; $vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
+which vcgencmd &>/dev/null && { vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
 
 ## Batter[y|ies]
 for batdir in $(ls -1d /sys/class/power_supply/BAT* 2>/dev/null);do
