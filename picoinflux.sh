@@ -40,7 +40,7 @@ _physical_disks() { which lsblk &>/dev/null && { lsblk|grep disk|cut -d" " -f1|s
 _voltage() {
 
 ## pi voltage
-which vcgencmd 2>&1 |grep -q vcgencmd && { vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
+vcgencmd=$(which vcgencmd)  && { $vcgencmd measure_volts core|sed 's/V$//g;s/volt/power_pi_core_voltage/g' ; $vcgencmd measure_volts  sdram_p |sed 's/V$//g;s/volt/power_pi_sdram_voltage/g' ; };
 
 ## Batter[y|ies]
 for batdir in $(ls -1d /sys/class/power_supply/BAT* 2>/dev/null);do
@@ -237,7 +237,7 @@ sleep 1
   ### RAM Mbytez
   ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
   ##( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read line;do   val=$(echo ${line##*=}|sed 's/iB$//g;s/B$//' |numfmt --from=iec) ;echo ${line%=*}"="$(awk 'BEGIN{print '$val/1024/1024'}') ;done  )
-## okayokay, GTFO numft cannot handle float 
+## okayokay, GTFO numft cannot handle float
   ( docker=$(which docker) && $docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  )
 
 
