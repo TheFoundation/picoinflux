@@ -10,6 +10,8 @@ mount |grep -e boot -e " / "|grep -q -e mmc -e ^overlay && TMPDATABASE=/dev/shm/
 ##openwrt and other mini systems have no nansoeconds
 timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 
+which timeout 2>&1|grep -q /timeout || ( which apk 2>&1 |grep -q opkg && ( opkg update;opkg install coreutils-timeout;which  ) )
+which timeout 2>&1|grep -q /timeout || timeout() { ( $( echo "$@"|cut -d" " -f2-)  &  sleep $1; kill $!) ; } ;
 # TARGET FORMAT  : load_shortterm,host=SampleClient value=0.67
 # TARGET_FORMAT_T: load,shortterm,host=SampleClient value=
 # CREATE ~/.picoinflux.conf with first line user:pass second line url (e.g. https://influxserver.net:8086/write?db=collectd
