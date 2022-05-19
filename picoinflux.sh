@@ -2,6 +2,10 @@
 SHELL=/bin/sh
 export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
 test -e /dev/shm || mkdir /dev/shm
+test -e /tmp || mkdir /tmp
+mount |grep /tmp ||  mount -t tmpfs -o size=50m none /tmp
+mount |grep /dev/shm ||  mount -t tmpfs -o size=50m none /dev/shm
+
 test  -e /system/bin/grep 2>/dev/null && export PATH=$PATH:/system/bin
 
 echo >/dev/shm/picoinflux.stderr.run.log
