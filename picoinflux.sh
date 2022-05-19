@@ -1,6 +1,9 @@
 #!/bin/sh
 SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
+export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin:~/.bin
+test -e /dev/shm || mkdir /dev/shm
+test  -e /system/bin/grep 2>/dev/null && export PATH=$PATH:/system/bin
+
 echo >/dev/shm/picoinflux.stderr.run.log
 
 TMPDATABASE=~/.influxdata
