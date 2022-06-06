@@ -125,10 +125,12 @@ _sysstats() {
         test -d /var/log/apache2 &&   echo "apache_logsize="$(du -m -s /var/log/apache2  2>/dev/null|cut -d"/" -f1)
         test -d /var/log/nginx &&     echo "nginx_logsize="$(du -m -s /var/log/nginx  2>/dev/null|cut -d"/" -f1)
         test -e /var/log/syslog &&    echo "syslog_lines="$(wc -l /var/log/syslog 2>/dev/null|cut -d " " -f1)
-        test -e /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.err &&  echo "mail_err="$(wc -l /var/log/mail.err 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.warn && echo "mail_warn="$(wc -l /var/log/mail.warn 2>/dev/null|cut -d " " -f1)
+        test -e /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.log &&  { echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l) ; } ;
+        which postqueue &>/dev/null && { echo "mail_queue_size_postfix="$(postqueue -p |grep '^[0-9]'|wc -l) ; echo "mail_queue_ERR_timeout="$( postqueue -p |grep "Connection timed out"|wc -l) ; } ; 
+
         test -e /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 ## temperatures
