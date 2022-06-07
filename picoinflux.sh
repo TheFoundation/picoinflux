@@ -7,6 +7,7 @@ mount |grep " / " |grep -q -e overlay  -e  jffs -e mmcbl && {   mount |grep -q /
 mount |grep -q /dev/shm ||  mount -t tmpfs -o size=50m none /dev/shm
 
 test  -e /system/bin/grep 2>/dev/null && export PATH=$PATH:/system/bin
+test  -e /data/data/com.termux/files/usr/bin/grep 2>/dev/null && export PATH=$PATH:/data/data/com.termux/files/usr/bin/
 
 
 echo >/dev/shm/picoinflux.stderr.run.log
