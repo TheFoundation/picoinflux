@@ -134,6 +134,10 @@ _sysstats() {
         which postqueue &>/dev/null && { echo "mail_queue_size_postfix="$(postqueue -p |grep '^[0-9A-Z]'|wc -l) ; echo "mail_queue_ERR_timeout="$( postqueue -p |grep "Connection timed out"|wc -l); echo "mail_queue_MAILERDAEMON_postfix="$(postqueue -p |grep '^[0-9A-Z]'|grep MAILER|grep DAEMON | wc -l) ; } ;
         test -e /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
+##fail2ban
+which fail2ban-client >/dev/null && fail2ban-client status|grep -i -v number|grep -i list|cut -d: -f2|sed 's/,/\n/g'|sed 's/ //g;s/\t//g'|while read jail;do jstatus=$(fail2ban-client status $jail);for term in "Currently banned" "Currently failed" "Total failed" "Total banned" ;do echo "fail2ban_jail_"$jail"_$(echo "$term"|sed 's/ /-/g'|tr '[:upper:]' '[:lower:]')="$(echo "$jstatus" |grep "$term"|cut -d":" -f2|sed 's/ //g;s/\t//g');done ;done
+
+
 ## temperatures
         # intel nuc new gen reports -263200 on temp0 for no reason
               for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done|sed 's/-263200//g'
