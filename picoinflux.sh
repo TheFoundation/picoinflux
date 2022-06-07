@@ -132,7 +132,7 @@ _sysstats() {
         test -e /var/log/mail.log &&  echo "mail_log="$(wc -l /var/log/mail.log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/mail.log &&  { echo "mail_bounced_total="$(grep -e status=bounced /var/log/mail.log|wc -l);echo "mail_bounced_today="$(grep -e status=bounced /var/log/mail.log|grep "$(date +%b\ %e)"|wc -l) ; } ;
 #        which postqueue &>/dev/null && { echo "mail_queue_size_postfix="$(postqueue -p |grep '^[0-9]'|wc -l) ; echo "mail_queue_ERR_timeout="$( postqueue -p |grep "Connection timed out"|wc -l) ; } ; 
-        which postqueue &>/dev/null && { echo "mail_queue_size_postfix="$(postqueue -p |grep '^[0-9A-Z]'|wc -l) ; echo "mail_queue_ERR_timeout="$( postqueue -p |grep "Connection timed out"|wc -l); echo "mail_queue_MAILERDAEMON_postfix="$(postqueue -p |grep '^[0-9A-Z]'|grep MAILER|grep DAEMON | wc -l) ; } ;
+        which postqueue &>/dev/null && { echo "mail_queue_size_postfix="$(postqueue -p |grep -v "Mail queue is empty" |grep '^[0-9A-Z]'|wc -l) ; echo "mail_queue_ERR_timeout="$( postqueue -p |grep "Connection timed out"|wc -l); echo "mail_queue_MAILERDAEMON_postfix="$(postqueue -p |grep '^[0-9A-Z]'|grep MAILER|grep DAEMON | wc -l) ; } ;
         test -e /var/log/cups/access_log && echo "cups_access="$(wc -l /var/log/cups/access_log 2>/dev/null|cut -d " " -f1)
         test -e /var/log/cups/error_log && echo "cups_error="$(wc -l /var/log/cups/error_log 2>/dev/null|cut -d " " -f1)
 ##fail2ban
