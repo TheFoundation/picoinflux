@@ -265,7 +265,7 @@ dockermemstats=$(timeout 23 docker stats -a --no-stream --format "table {{.MemUs
 ## get current mem
 echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
 # get limit ( in many environments the limits are set way too high since docker lets a container eat all memory by default and even having 50 hosts on a 8C/16G machine is possible untill all of them want their 1Gig ram)
-echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  |grep -v =0$ ;done  
+echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done |grep -v "value=0 " 
 
 )
 
