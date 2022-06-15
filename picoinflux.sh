@@ -242,20 +242,33 @@ sleep 1
 #( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+2 |grep -v ^$| while read contline;do
 #                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( nsenttarget=$( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) ; [[ -z "$nsenttarget" ]] || $nsenter -t $nsenttarget -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
 ##GTFO nsenter
-( docker=$(which docker) && $docker ps --format "{{.Names}}" --filter "status=running"  |tail -n+2 |grep -v ^$| while read contline;do timeout 23 $docker container inspect $contline|grep '"NetworkMode": "host"' -q  ||( echo $( echo -n $contline":" ; timeout 23 $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) );done |sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
+( docker=$(which docker) && $docker ps --format "{{.Names}}" --filter "status=running"  |tail -n+2 |grep -v ^$| while read contline;do $timeout 23 $docker container inspect $contline|grep '"NetworkMode": "host"' -q  ||( echo $( echo -n $contline":" ; $timeout 23 $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) );done |sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
 (
   ##docker memory and cpu percent
-  ( docker=$(which docker) && $timeout 23 docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
-  ( docker=$(which docker) && $timeout 23 docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
+  running_containers=$($docker ps --format "{{.Names}}" --filter "status=running")
+  ( docker=$(which docker) && $timeout 23 docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream $running_containers  |grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
+  ( docker=$(which docker) && $timeout 23 docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream $running_containers  |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
 
   ## docker traffic stats
-  ( docker=$(which docker) && $timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}"|tail -n+2|sed 's/ \/ / down \n/g;s/$/ up/g'|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
+  ( docker=$(which docker) && $timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|sed 's/ \/ / down \n/g;s/$/ up/g'|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
 
   ### RAM Mbytez
   ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && $timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
   ##( docker=$(which docker) && $timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read line;do   val=$(echo ${line##*=}|sed 's/iB$//g;s/B$//' |numfmt --from=iec) ;echo ${line%=*}"="$(awk 'BEGIN{print '$val/1024/1024'}') ;done  )
 ## okayokay, GTFO numft cannot handle float
-  ( docker=$(which docker) && $timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  )
+  ( 
+##save to var
+docker=$(which docker) && (
+
+dockermemstats=$($timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" $running_containers )
+## get current mem
+echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
+# get limit ( in many environments the limits are set way too high since docker lets a container eat all memory by default and even having 50 hosts on a 8C/16G machine is possible untill all of them want their 1Gig ram)
+echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'   |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
+
+)
+
+)
 
 
 )  >&5 2>>/dev/shm/picoinflux.stderr.run.log &
