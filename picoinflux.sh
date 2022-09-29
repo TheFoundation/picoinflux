@@ -146,6 +146,16 @@ which fail2ban-client >/dev/null && fail2ban-client status|grep -i -v number|gre
               for h in $(seq 0 31);do for i in $(seq 0 31);do test -f /sys/class/hwmon/hwmon$h/device/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/device/temp"$i"_input); test -f /sys/class/hwmon/hwmon$h/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/temp"$i"_input);done;done|sed 's/-263200//g'
 echo ;};
 
+_wiglestats() {
+ test -e /etc/picoinflux.wigletoken && { 
+ TOK=$(cat /etc/picoinflux.wigletoken)
+ [[ -z "$TOK" ]] || {
+     wigleuserstats=$(curl -i -H 'Accept:application/json' -u "$TOK" --basic https://api.wigle.net/api/v2/stats/user 2>/dev/shm/picoinflux.wigle.get)
+     wigleusername=$(echo "$wigleuserstats" |sed 's/,/\n"/g;s/"//g'|grep ^user:|cut -d":" -f2 |sed 's/}//g')
+      [[ -z "$wigleusername" ]] || {  echo "$wigleuserstats"|sed 's/,/\n"/g;s/"//g'|grep -v Percent|sed 's/\(.\+\|\){//g'|grep -e ^discovered -e onthRank -e ^prevRank -e ^rank|sort -u |sed 's/^/wigle_/g;s/:/,target='$wigleusername' value=/g' ; } ;
+ echo -n ; } ; } ;
+
+}
 _dockerhubstats() {
         curlopts="";netstat -puteenl 2>/dev/null |grep 127.0.0.1:9050|grep -q ^tcp && curlopts=" -x socks://127.0.0.1:9050 "
 
@@ -234,8 +244,9 @@ sleep 1
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=heise.de"$(ping6 heise.de -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" )     >&7)
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 ## get dockerhub counts via api
-(test -e /etc/pico.dockerhub.conf && _dockerhubstats |grep -v '^-' ) 2>>/dev/shm/picoinflux.stderr.run.log  &
-
+( test -e /etc/pico.dockerhub.conf   && _dockerhubstats |grep -v '^-' ) 2>>/dev/shm/picoinflux.stderr.run.log  &
+## get wigle stats via api
+( test -e /etc/picoinflux.wigletoken && _wiglestats ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 sleep 1
 
 
