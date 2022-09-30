@@ -153,7 +153,7 @@ _wiglestats() {
      wigleuserstats=$(curl -i -H 'Accept:application/json' -u "$TOK" --basic https://api.wigle.net/api/v2/stats/user 2>/dev/shm/picoinflux.wigle.get)
      wigleusername=$(echo "$wigleuserstats" |sed 's/,/\n"/g;s/"//g'|grep ^user:|cut -d":" -f2 |sed 's/}//g')
      # [[ -z "$wigleusername" ]] || {  echo "$wigleuserstats"|sed 's/,/\n"/g;s/"//g'|grep -v Percent|sed 's/\(.\+\|\){//g'|grep -e ^discovered -e onthRank -e ^prevRank -e ^rank|sort -u |sed 's/^/wigle_/g;s/:/,target='$wigleusername' value=/g' ; } ;
-      [[ -z "$wigleusername" ]] || {  echo "$wigleuserstats"|sed 's/,/\n"/g;s/"//g'|grep -v Percent|sed 's/\(.\+\|\){//g'|grep -e ^discovered -e onthRank -e ^prevRank -e ^rank|sort -u |sed 's/^/wigle_/g;s/:/,target='$wigleusername'=/g' ; } ;
+      [[ -z "$wigleusername" ]] || {  echo "$wigleuserstats"|sed 's/,/\n"/g;s/"//g'|grep -v Percent|sed 's/\(.\+\|\){//g'|grep -e ^event -e ^discovered -e onthRank -e ^prevRank -e ^rank|sort -u |sed 's/^/wigle_/g;s/:/,target='$wigleusername'=/g' ; } ;
 
  echo -n ; } ; } ;
 
