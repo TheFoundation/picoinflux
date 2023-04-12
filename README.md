@@ -37,10 +37,10 @@ https://corlysis.com:8086/write?db=mydatabase
 ```
 
 
-## example primary influx V2
+## example primary influx V2 ( you might leave out "org=xyz" nowadays )
 ```
 KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
-https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&precision=ns
 TOKEN=true
 
 ```
@@ -58,7 +58,7 @@ TOKEN2=false
 ##  add the following lines for a backup/secondary write with token (influx v2):
 ```
 SECONDARY=true
-URL2=https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+URL2=https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&precision=ns
 AUTH2=KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
 TOKEN2=true
 ```

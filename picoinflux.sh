@@ -17,7 +17,7 @@ TMPDATABASE=~/.influxdata
 mount |grep -e boot -e " / "|grep -q -e mmc -e ^overlay && TMPDATABASE=/dev/shm/.influxdata
 
 ##openwrt and other mini systems have no nansoeconds
-timestamp_nanos() { if [[ $(date +%s%N |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
+timestamp_nanos() { if [[ $(date -u +%s%N|grep ^[0-9] |wc -c) -eq 20  ]]; then date -u +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
 
 which timeout 2>&1|grep -q /timeout || ( which apk 2>&1 |grep -q opkg && ( opkg update;opkg install coreutils-timeout;which  ) )
 which timeout 2>&1|grep -q /timeout || timeout() { ( $( echo "$@"|cut -d" " -f2-)  &  sleep $1; kill $!) ; } ;
@@ -317,16 +317,16 @@ grep -q "^SECONDARY=true" ${HOME}/.picoinflux.conf && (
     ( ( test -f ${TMPDATABASE} && cat ${TMPDATABASE} ; test -f ${TMPDATABASE}.secondary && cat ${TMPDATABASE}.secondary ) | sort |uniq > ${TMPDATABASE}.tmp ;
      mv ${TMPDATABASE}.tmp ${TMPDATABASE}.secondary )  ##
     grep -q ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf && PROXYSTRING='-x '$(grep ^PROXYFLUX_SECONDARY= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
-    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( echo using header auth > /dev/shm/piconiflux.secondary.log; (curl $PROXYSTRING -v -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )
-    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf || ( echo using passwd auth > /dev/shm/piconiflux.secondary.log; (curl $PROXYSTRING -v -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log   )
+    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf && ( echo using header auth > /dev/shm/picoinflux.secondary.log; (curl $PROXYSTRING --retry-delay 30 --retry 2 -v -k --header "Authorization: Token $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-)" -i -XPOST "$(grep ^URL2 ~/.picoinflux.conf|cut -d= -f2-)" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) >/tmp/picoinflux.secondary.log  )
+    grep -q "^TOKEN2=true" $HOME/.picoinflux.conf || ( echo using passwd auth > /dev/shm/picoinflux.secondary.log; (curl $PROXYSTRING --retry-delay 30 --retry 2 -v -k -u $(grep ^AUTH2= $HOME/.picoinflux.conf|cut -d= -f2-) -i -XPOST "$(grep ^URL2 $HOME/.picoinflux.conf|cut -d= -f2-|tr -d '\n')" --data-binary @${TMPDATABASE}.secondary 2>&1 && rm ${TMPDATABASE}.secondary 2>&1 ) & ) >/tmp/picoinflux.secondary.log   )
 
     grep -q ^PROXYFFLUX= ${HOME}/.picoinflux.conf && PROXYSTRING='-x '$(grep ^PROXYFFLUX= ${HOME}/.picoinflux.conf|tail -n1 |cut -d= -f2- )
 
 grep -q "^TOKEN=true" ~/.picoinflux.conf && (
-  (echo using header auth > /dev/shm/piconiflux.log;echo "size $(wc -l ${TMPDATABASE})lines ";curl  $PROXYSTRING -v -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
+  (echo using header auth > /dev/shm/picoinflux.log;echo "size $(wc -l ${TMPDATABASE}) lines ";curl  $PROXYSTRING --retry-delay 30 --retry 2 -v -k --header "Authorization: Token $(head -n1 $HOME/.picoinflux.conf)" -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
 
 grep -q "^TOKEN=true" ~/.picoinflux.conf || ( \
-  (echo using passwd auth > /dev/shm/piconiflux.log;echo "size $(wc -l ${TMPDATABASE})lines ";curl  $PROXYSTRING -v -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
+  (echo using passwd auth > /dev/shm/picoinflux.log;echo "size $(wc -l ${TMPDATABASE}) lines ";curl  $PROXYSTRING --retry-delay 30 --retry 2 -v -k -u $(head -n1 $HOME/.picoinflux.conf) -i -XPOST "$(head -n2 $HOME/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} /tmp/.influxdata.last 2>&1 ) >/tmp/picoinflux.log  )
 
 #(curl -s -k -u $(head -n1 ~/.picoinflux.conf) -i -XPOST "$(head -n2 ~/.picoinflux.conf|tail -n1)" --data-binary @${TMPDATABASE} 2>&1 && mv ${TMPDATABASE} ${TMPDATABASE}.sent 2>&1 ) >/tmp/picoinflux.log
 
@@ -342,7 +342,7 @@ grep -q "^TOKEN=true" ~/.picoinflux.conf || ( \
 
 ## example V2
 #KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
-#https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+#https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&precision=ns
 #TOKEN=true
 
 
@@ -355,7 +355,7 @@ grep -q "^TOKEN=true" ~/.picoinflux.conf || ( \
 
 ##  add the following lines for a backup/secondary write with token (influx v2):
 # SECONDARY=true
-# URL2=https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&&precision=ns
+# URL2=https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/write?org=deaf13beef12&bucket=sys&precision=ns
 # AUTH2=KJAHSKDUHIUHIuh23ISUADHIUH2IUAWDHiojoijasd2asodijawoij12e_asdioj2ASOIDJ3==
 # TOKEN2=true
 #
