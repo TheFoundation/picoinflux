@@ -270,7 +270,7 @@ sleep 1
 
   ## docker traffic stats
   echo "docker_traffic">&2;
-  ( docker=$(which docker) && timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
+  ( docker=$(which docker) && timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|grep -v 'target__EQ__--=--'|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
 
   ### RAM Mbytez
   ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
@@ -280,9 +280,9 @@ sleep 1
 docker=$(which docker) && (
 ##save to var
 
-dockermemstats=$(timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" $running_containers )
+dockermemstats=$(timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" $running_containers|grep -v -e "^--" -e "^-- / --" )
 ## get current mem
-  echo "docker_memstats">&2;
+echo "docker_memstats">&2;
 echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'      |grep -v -e '^--$' -e ^$|grep -v -e "=0B$" -e "=0"  | while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g'|tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
 # get limit ( in many environments the limits are set way too high since docker lets a container eat all memory by default and even having 50 hosts on a 8C/16G machine is possible untill all of them want their 1Gig ram)
 echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'|grep -v -e '^--$' -e ^$|grep -v -e "=0B$" -e "=0"  |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g'|tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done |grep -v "value=0 " 
