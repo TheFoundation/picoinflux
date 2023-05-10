@@ -100,7 +100,7 @@ _networkstats() { ### network
 ## wan tx/rx
         test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }'|head -n1 )/statistics/tx_bytes && echo "wan_tx_bytes="$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route|head -n1)/statistics/tx_bytes)
         test -e /sys/class/net/$(cat /proc/net/route |awk '$2 == 00000000 { print $1 }'|head -n1 )/statistics/rx_bytes && echo "wan_rx_bytes=-"$(cat /sys/class/net/$(awk '$2 == 00000000 { print $1 }' /proc/net/route|head -n1)/statistics/rx_bytes)
-        echo  ;};
+echo  ;}; ## end network
 
 _diskstats() {
   ##disks
@@ -120,7 +120,8 @@ _diskstats() {
   #raid
   find /dev -type b -name "md*" |while read myraid ;do mdadm --detail ${myraid} | grep -e '^\s*State : ' | awk '{ print $NF; }' |grep -e active -e clean -q && echo sys_raid_statuscode,target=${myraid//\/dev\//}=200 || echo 409;done
   test -f /proc/mdstat && ( dev="";sed 's/\(check\|recovery\|finish\|speed\)/\n#     \0/g;s/^ /#/g' /proc/mdstat |grep -v -e "^# *$" -e "unused devices" -e ^Personalities |while read a ; do if [[ "$a" =~ ^#.*  ]]; then echo "$a"|sed 's/^# \+/'$dev" : "'/g'; else dev=$(echo "$a"|cut -d" " -f1);echo "$a";fi;done|grep -e recovery -e speed -e finish -e check|sed 's/\(min\|K\/sec\|%.\+\)$//g;s/ //g;s/:/_/g;s/^/raid_sync_/g;s/_\(check\|recovery\)/_percent\0/g' )
-echo  ;};
+echo  ;}; 
+## end diststats
 
 _sysstats() {
         test -f /proc/uptime &&       echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
@@ -144,7 +145,8 @@ which fail2ban-client >/dev/null && fail2ban-client status|grep -i -v number|gre
         # intel nuc new gen reports -263200 on temp0 for no reason
               for i in $(seq 0 31);do test -f /sys/devices/virtual/thermal/thermal_zone$i/temp && echo "temp_"$i"="$(cat /sys/devices/virtual/thermal/thermal_zone$i/temp);done|sed 's/-263200//g'
               for h in $(seq 0 31);do for i in $(seq 0 31);do test -f /sys/class/hwmon/hwmon$h/device/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/device/temp"$i"_input); test -f /sys/class/hwmon/hwmon$h/temp"$i"_input && echo "temp_hwmon_"$h"_"$i"="$(cat /sys/class/hwmon/hwmon$h/temp"$i"_input);done;done|sed 's/-263200//g'
-echo ;};
+echo ;};  
+## end sysstats
 
 _wiglestats() {
  test -e /etc/picoinflux.wigletoken && { 
@@ -183,7 +185,6 @@ _dockerhubstats() {
 
                   done|sed 's/","/_/g;s/\]//g;s/",/=/g'   ; } ;
 echo -n ; } ;
-
 
                         #images=$(echo "$imageresult" |  jq -c '.results[]  | .images[]' |jq .)
                          #echo grid:
@@ -265,7 +266,7 @@ sleep 1
   ( docker=$(which docker) && timeout 23 docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream $running_containers  |sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
 
   ## docker traffic stats
-  ( docker=$(which docker) && timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|sed 's/ \/ / down \n/g;s/$/ up/g'|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
+  ( docker=$(which docker) && timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
 
   ### RAM Mbytez
   ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
@@ -277,9 +278,9 @@ docker=$(which docker) && (
 
 dockermemstats=$(timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" $running_containers )
 ## get current mem
-echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'      |grep -v -e "=0B$" -e "=0"  | while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
+echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'      |grep -v -e '^--$' -e ^$|grep -v -e "=0B$" -e "=0"  | while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g'|tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }'  ;done  
 # get limit ( in many environments the limits are set way too high since docker lets a container eat all memory by default and even having 50 hosts on a 8C/16G machine is possible untill all of them want their 1Gig ram)
-echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'|grep -v -e "=0B$" -e "=0"  |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done |grep -v "value=0 " 
+echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed 's/^/docker_limit_mem_mbyte,target=/g'|grep -v -e '^--$' -e ^$|grep -v -e "=0B$" -e "=0"  |while read keyval;do  key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/KiB/*0.001/g;s/kB/*0.001/g;s/MiB/*1/g;s/GiB/*1000/g'|tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done |grep -v "value=0 " 
 
 )
 
