@@ -79,11 +79,10 @@ _networkstats() { ### network
 #        awk '/^MemTotal/ { t=$2 } /^MemFree/ { f=$2 } /^Buffers/ { b=$2 } /^Cached/ { c=$2 } /^MemAvailable/ { a=$2 } END { printf "memory_percentfree_buffcache=%.2f\n", ((t-a+b+c)/t*100) }' /proc/meminfo;
          awk '/^MemTotal/ { t=$2 } /^MemFree/ { f=$2 } /^Buffers/ { b=$2 } /^Cached/ { c=$2 } /^MemAvailable/ { a=$2 } END { printf "memory_percentfree_buffcache=%.2f\n", ((f+b+c)/t*100) }' /proc/meminfo;
 
-
 test -e /dev/shm/.picolastupdatecheck || LASTUPDCHECK=0
 test -e /dev/shm/.picolastupdatecheck && LASTUPDCHECK=$(cat /dev/shm/.picolastupdatecheck)
 [[  $((  $LASTUPDCHECK - $(date -u +%s)  )) -le -21600 ]] && (
-        which apt &>/dev/null && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
+        which apt &>/dev/null  && echo "upgradesavail_apt="$( ( apt list --upgradable 2>/dev/null || apt-get -qq -u upgrade -y --force-yes --print-uris 2>/dev/null ) 2>/dev/null |tail -n+2 |wc -l|cut -d" " -f1)
         which opkg &>/dev/null && echo "upgradesavail_opkg="$(opkg list-upgradable|wc -l|cut -d" " -f1)
         date -u +%s>/dev/shm/.picolastupdatecheck
 )
