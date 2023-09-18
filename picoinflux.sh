@@ -111,7 +111,19 @@ echo  ;}; ## end network
 
 _diskstats() {
   ##disks
-  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do set $disk;echo "disk_"$1"_"reads-completed=$2;echo "disk_"$1"_"reads-merged=$3;echo "disk_"$1"_"reads-sectors=$4;echo "disk_"$1"_"ms-reads=$5;echo "disk_"$1"_"writes-completed=$6;echo "disk_"$1"_"writes-merged=$7;echo "disk_"$1"_"writes-sectors=$8;echo "disk_"$1"_"ms-writes=$9;echo "disk_"$1"_"io-current=${10};echo "disk_"$1"_"io-ms=${11};echo "disk_"$1"_"io-ms-weighted=${12};done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_"
+  test -f /proc/diskstats && cat /proc/diskstats |grep -v -e dm- -e "0 0 0 0 0 0 0 0 0 0 0$"|sed 's/ \+/ /g'|cut -d" " -f4-|while read disk;do 
+      set $disk;
+      echo "disk_"$1"_"reads-completed=$2   ;
+      echo "disk_"$1"_"reads-merged=$3      ;
+      echo "disk_"$1"_"reads-sectors=$4     ;
+      echo "disk_"$1"_"ms-reads=$5          ;
+      echo "disk_"$1"_"writes-completed=$6  ;
+      echo "disk_"$1"_"writes-merged=$7     ;
+      echo "disk_"$1"_"writes-sectors=$8    ;
+      echo "disk_"$1"_"ms-writes=$9         ;
+      echo "disk_"$1"_"io-current=${10}     ;
+      echo "disk_"$1"_"io-ms=${11}          ;
+      echo "disk_"$1"_"io-ms-weighted=${12} ; done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" |grep ^disk|grep -e ms= -e ted= -e ors= -e ged= -e ads=
 
   which smartctl&>/dev/null && { _physical_disks |while read disk;do  diskinfo=$(smartctl -A ${disk} 2>/dev/null) ;
                                               echo "$diskinfo" | awk '/Power_On_Hours/ {print "sys_disk_hours,target='${disk/\/dev\//}'="$NF}'
@@ -176,15 +188,15 @@ _dockerhubstats() {
 
               for IMAGE in $(echo "$imageline"|jq -c '.value.name '|cut -d'"' -f2) ;do
                 imageresult=$(curl -4 ${curlopts} -s "https://hub.docker.com/v2/repositories/$ORGNAME/$IMAGE/tags/?page_size=1000&page=1")
-                echo "$imageresult" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_reposize,target='$ORGNAME'_'$IMAGE'_/g;' ;
+                echo "$imageresult" |     jq -c '.results[]  | [.name,.full_size]' |sed 's/^\["/dockerhub_reposize,target='$ORGNAME'_'$IMAGE'_/g;' |tr -d '\n';echo ;
                 for tag in $(echo "$imageresult" |  jq -c '.results[]  | .name' |cut -d'"' -f2) ;do
-                timegrid=$(echo "$imageresult" |jq -c '.results[] | .images[]|[.last_pushed,.architecture,.size]  ' )
-                gridout=$(                  echo "$timegrid"|cut -d'"' -f1,3-|tail -n 3|sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_'${tag// /_}'_/g;s/_,"/_/g' ;)
+                    timegrid=$(echo "$imageresult" |jq -c '.results[] | .images[]|[.last_pushed,.architecture,.size]  ' )
+                    gridout=$( echo "$timegrid"|cut -d'"' -f1,3-|tail -n 3|sed 's/^\["/dockerhub_imagesize,target='$ORGNAME'_'$IMAGE'_'${tag// /_}'_/g;s/_,"/_/g' ;)
                 for gridkey in $(echo "$gridout"|cut -d"=" -f1,2|cut -d'"' -f1|sort -u);do
                 #echo "KEY:$gridkey" >&2;echo
-                    echo "$gridout"|grep "$gridkey"|tail -n1
+                    echo "$gridout"|grep "$gridkey"|tail -n1 |tr -d '\n';echo
                 done
-                echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'
+                echo "$imageline"|jq -c '[.value.namespace,.value.name,.value.pull_count] ' |sed 's/^\["/dockerhub_pullcount,target=/g;'|tr -d '\n';echo
               done
             done
           done
