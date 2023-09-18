@@ -202,7 +202,7 @@ _dockerhubstats() {
           done
         echo -n ; } ;
 
-                  done|sed 's/","/_/g;s/\]//g;s/",/=/g'   ; } ;
+                  done|sed 's/","/_/g;s/\]//g;s/",/=/g;s/dockerhub_/\ndockerhub_/g'  ; } ;
 echo -n ; } ;
 
                         #images=$(echo "$imageresult" |  jq -c '.results[]  | .images[]' |jq .)
