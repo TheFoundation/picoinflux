@@ -60,9 +60,9 @@ for batdir in $(ls -1d /sys/class/power_supply/BAT* 2>/dev/null);do
   echo power_battery_health_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_full) / $(cat  /sys/class/power_supply/${mybat}/energy_full_design)   }")
   echo power_battery_charge_${mybat}_percent=$(awk "BEGIN {  ;print   100 * $(cat /sys/class/power_supply/${mybat}/energy_now)  / $(cat  /sys/class/power_supply/${mybat}/energy_full)          }")
   #echo power_battery_volt_${mybat}_minimum=$(cat  /sys/class/power_supply/${mybat}/voltage_min_design)
-  #echo power_battery_volt_${mybat}_current=$(cat  /sys/class/power_supply/${mybat}/voltage_now)
-  grep -i ^discharg /sys/class/power_supply/${mybat}/status -q && echo power_battery_volt_${mybat}_minutes_till_empty=$((60*$(cat /sys/class/power_supply/${mybat}/energy_now)/$(cat /sys/class/power_supply/${mybat}/power_now)))
-  grep -i    ^charg /sys/class/power_supply/${mybat}/status -q && echo power_battery_volt_${mybat}_minutes_till_full=$((60*($(cat /sys/class/power_supply/${mybat}/energy_full)-$(cat /sys/class/power_supply/${mybat}/energy_now))/$(cat /sys/class/power_supply/${mybat}/power_now)))
+  echo power_battery_volt_${mybat}_current=$(cat  /sys/class/power_supply/${mybat}/voltage_now)
+  grep -i ^discharg /sys/class/power_supply/${mybat}/status -q && echo power_battery_time_${mybat}_minutes_till_empty=$((60*$(cat /sys/class/power_supply/${mybat}/energy_now)/$(cat /sys/class/power_supply/${mybat}/power_now)))
+  grep -i    ^charg /sys/class/power_supply/${mybat}/status -q && echo power_battery_time_${mybat}_minutes_till_full=$((60*($(cat /sys/class/power_supply/${mybat}/energy_full)-$(cat /sys/class/power_supply/${mybat}/energy_now))/$(cat /sys/class/power_supply/${mybat}/power_now)))
   echo -n;
 done ; } ;
 ##end _voltage
