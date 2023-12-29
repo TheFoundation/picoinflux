@@ -4,7 +4,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bi
 test -e /dev/shm || mkdir /dev/shm
 test -e /tmp || mkdir /tmp
 mount |grep " / " |grep -q -e overlay  -e  jffs -e mmcbl && {   mount |grep -q /tmp     ||  mount -t tmpfs -o size=50m none /tmp ; } ;
-mount |grep -q /dev/shm ||  mount -t tmpfs -o size=50m none /dev/shm
+mount |grep -q -e /dev/shm -e "/tmp/shm type tmpfs" -e "^none on /tmp/shm" ||  mount -t tmpfs -o size=50m none /dev/shm
 
 test  -e /system/bin/grep 2>/dev/null && export PATH=$PATH:/system/bin
 test  -e /data/data/com.termux/files/usr/bin/grep 2>/dev/null && export PATH=$PATH:/data/data/com.termux/files/usr/bin/
