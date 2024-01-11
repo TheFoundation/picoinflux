@@ -34,12 +34,16 @@ _sys_load_percent() {
     LOAD_SHORT=$(cut /proc/loadavg -d" " -f1);
     echo sys_load_percent_shortterm=$(echo ${NCPU} ${LOAD_SHORT} | awk '{printf  100*$2/$1 }' ) ;
     echo sys_load_percent_midterm=$(echo ${NCPU} ${LOAD_MID}     | awk '{printf  100*$2/$1 }' ) ;
-    # second uptime field ( ilde ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
+    # second uptime field ( idle ) is ncpu*uptime(s) , so 8 seconds for 8 cores fullly idling ;
     echo sys_load_percent_uptime=$(awk '{printf  100-100*$2/'${NCPU}'/$1 }' /proc/uptime) ; } ;
 
 _sys_memory_percent() {
     grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
     echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
+
+grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
+grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
+
 
 #### time stamp and hostname ####
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
@@ -234,11 +238,11 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 
 ### end system fork
 (
-        which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l);
-        test -f /proc/1/net/tcp && echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1)
-        test -f /proc/1/net/udp && echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1)
-        test -f /proc/1/net/nf_conntrack && echo "conntrack_connection_inits="$(grep -v -e ::1 -e 127.0.0.1  /proc/1/net/nf_conntrack| wc -l)
-        test -f /proc/net/nf_conntrack &&   echo "conntrack_connections="$(grep -v -e ::1 -e 127.0.0.1 /proc/net/nf_conntrack|wc -l)
+        which netstat >/dev/null && echo "netstat_connections="$(netstat -putn|grep -v 127.0.0.1|grep ":"|wc -l|cut -d" " -f1|grep_numbers_int);echo
+        test -f /proc/1/net/tcp && echo "tcp_connections="$(grep : /proc/1/net/tcp|wc -l|cut -d" " -f1);echo
+        test -f /proc/1/net/udp && echo "udp_connections="$(grep : /proc/1/net/udp|wc -l|cut -d" " -f1);echo
+        test -f /proc/1/net/nf_conntrack && echo "conntrack_connection_inits="$(grep -v -e ::1 -e 127.0.0.1  /proc/1/net/nf_conntrack| wc -l);echo
+        test -f /proc/net/nf_conntrack &&   echo "conntrack_connections="$(grep -v -e ::1 -e 127.0.0.1 /proc/net/nf_conntrack|wc -l);echo
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 ( ##ipv4 thread
