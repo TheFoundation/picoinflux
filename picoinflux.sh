@@ -281,18 +281,22 @@ sleep 1
 #( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+2 |grep -v ^$| while read contline;do
 #                       docker container inspect $contline|grep '"NetworkMode": "host"' -q  || echo $( echo -n $contline":" ;nsenter=$(which nsenter) && ( nsenttarget=$( $docker inspect -f '{{.State.Pid}}' $(echo $contline|cut -d" " -f1)) ; [[ -z "$nsenttarget" ]] || $nsenter -t $nsenttarget -n sh -c "which netstat && netstat -puteen" | grep -e ^tcp -e ^udp |wc -l)  || ( $docker exec -t $contline sh -c "which netstat && netstat -puteen" |grep -e ^tcp -e ^udp|wc -l) ) ; done|sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=0$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
 ##GTFO nsenter
-( echo "docker_netstat">&2;docker=$(which docker) && docker ps --format "{{.Names}}" --filter "status=running"  |tail -n+2 |grep -v ^$| while read contline;do timeout 23 $docker container inspect $contline|grep '"NetworkMode": "host"' -q  ||( echo $( echo -n $contline":" ; timeout 23 $docker exec -t $contline sh -c "which netstat &>/dev/null && (netstat -puteen|grep -e ^tcp -e ^udp);which netstat &>/dev/null || (tail -n+2 /proc/net/tcp ;tail -n+2 /proc/net/udp ;tail -n+2 /proc/net/tcp6 ;tail -n+2 /proc/net/udp6)|grep -v -e ' 00000000000000000000000000000000:0000 ' -e ' 00000000:0000 '"|wc -l) );done |sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
-(
+docker=$(which docker) && ( echo "docker_netstat">&2;docker=$(which docker) && docker ps --format "{{.Names}}" --filter "status=running"  |tail -n+2 |grep -v ^$| while read contline;do timeout 23 $docker container inspect $contline|grep '"NetworkMode": "host"' -q  ||( echo $( echo -n $contline":" ; timeout 23 $docker exec -t $contline sh -c "which netstat &>/dev/null && (netstat -puteen|grep -e ^tcp -e ^udp);which netstat &>/dev/null || (tail -n+2 /proc/net/tcp ;tail -n+2 /proc/net/udp ;tail -n+2 /proc/net/tcp6 ;tail -n+2 /proc/net/udp6)|grep -v -e ' 00000000000000000000000000000000:0000 ' -e ' 00000000:0000 '"|wc -l) );done |sed 's/^/docker_netstat_combined,target=/g;s/:/=/g' |grep -v "=$" >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log
+docker=$(which docker) && (
   ##docker memory and cpu percent
   running_containers=$(docker ps --format "{{.Names}}" --filter "status=running")
   echo "docker_cpuperc">&2;
-  ( docker=$(which docker) && timeout 23 docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream $running_containers  |grep -v -e '^--$' -e ^$|grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
+  ( timeout 23 docker stats --format "table {{.Name}}\t{{.CPUPerc}}" --no-stream $running_containers  |grep -v -e '^--$' -e ^$|grep -v -e ^NAME|sed 's/%//g;s/^/docker_cpu_percent,target=/g;s/\t\+/=/g;s/ \+/ /g;s/ /\t/g;s/\t\+/=/g'|grep -v "=0.00$" ) |grep ^docker_cpu_percent
   echo "docker_memperc">&2;
-  ( docker=$(which docker) && timeout 23 docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream $running_containers  |grep -v -e '^--$' -e ^$|sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
+  ( timeout 23 docker stats --format "table {{.MemPerc}}\t{{.Name}}" --no-stream $running_containers  |grep -v -e '^--$' -e ^$|sort -nr |grep -v -e "0.00%"$ -e ^NAME -e ^MEM |awk '{print $2"="$1}'|sed 's/%//g;s/^/docker_memtop20_percent,target=/g'|grep ^docker_memtop20_percent | head -n20 )
 
   ## docker traffic stats
   echo "docker_traffic">&2;
-  ( docker=$(which docker) && timeout 23 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|grep -v 'target__EQ__--=--'|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
+  ( timeout 30 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|grep -v 'target__EQ__--=--'|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
+  ## docker traffic stats
+  echo "docker_uptime">&2;
+  echo "$running_containers" |while read cont;do  rtime=$(date -u -d @$(echo "$(date -u +%s) - $(date --date $(docker inspect -f '{{ .State.StartedAt }}' $cont) +%s)" | bc) +'%s' );echo "docker_uptime,target=$cont=$rtime";done
+  
 
   ### RAM Mbytez
   ##DOCKER USES HUMAN READABLE FORMAT        ( docker=$(which docker) && timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$1}'|sed 's/^/docker_mem_mbyte,target=/g'  )  &
@@ -300,7 +304,6 @@ sleep 1
 ## okayokay, GTFO numft cannot handle float
   ( 
 docker=$(which docker) && (
-##save to var
 
 dockermemstats=$(timeout 23 docker stats -a --no-stream --format "table {{.MemUsage}}\t{{.Name}}" $running_containers|grep -v -e "^--" -e "^-- / --" )
 ## get current mem
