@@ -295,7 +295,7 @@ docker=$(which docker) && (
   ( timeout 30 docker stats --no-trunc --no-stream --all --format "table docker_net_traffic_mb\,target__EQ__{{.Name}}={{.NetIO}}" $running_containers |tail -n+2|grep -v 'target__EQ__--=--'|sed 's/ \/ / down \n/g;s/$/ up/g'|grep -v -e '^--$' -e ^$|sed 's/=/=\n/g'|while read cont;do read down ;read up;echo $cont$down;echo $cont$up;done|sed 's/=\(.\+\) \+down$/_rx=-\1/g;s/=\(.\+\) \+up$/_tx=+\1/g;s/__EQ__/=/g'|grep -v -e '=-0B$' -e '=+0B$'|while read keyval;do key=$(echo $keyval|cut -d= -f1,2);val=${keyval/*=/};vcalc=$(echo $val|sed 's/kB/*0.001/g;s/MB/*1/g;s/GiB/*1000/g' |tr -d '\n');echo -n $key=;echo|awk '{ print '$vcalc'  }' ;done  )
   ## docker traffic stats
   echo "docker_uptime">&2;
-  echo "$running_containers" |while read cont;do  rtime=$(date -u -d @$(echo "$(date -u +%s) - $(date --date $(docker inspect -f '{{ .State.StartedAt }}' $cont) +%s)" | bc) +'%s' );echo "docker_uptime,target=$cont=$rtime";done
+  echo "$running_containers" |grep -v ^$|while read cont;do  rtime=$(date -u -d @$(echo "$(date -u +%s) - $(date --date $(docker inspect -f '{{ .State.StartedAt }}' $cont) +%s)" | bc) +'%s' );echo "docker_uptime,target=$cont=$rtime";done
   
 
   ### RAM Mbytez
