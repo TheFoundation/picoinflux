@@ -127,7 +127,7 @@ _diskstats() {
       echo "disk_"$1"_"ms-writes=$9         ;
       echo "disk_"$1"_"io-current=${10}     ;
       echo "disk_"$1"_"io-ms=${11}          ;
-      echo "disk_"$1"_"io-ms-weighted=${12} ; done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" |grep ^disk|grep -e ms= -e ted= -e ors= -e ged= -e ads=
+      echo "disk_"$1"_"io-ms-weighted=${12} ; done| grep -v -e  "^disk_[vhs]d[a-z][0-9]_" -e "^disk_mmcblk[0-9]p[0-9]_" |grep ^disk|grep -e ent= -e ites= -e ms= -e ted= -e ors= -e ged= -e ads=
 
   which smartctl&>/dev/null && { _physical_disks |while read disk;do  diskinfo=$(smartctl -A ${disk} 2>/dev/null) ;
                                               echo "$diskinfo" | awk '/Power_On_Hours/ {print "sys_disk_hours,target='${disk/\/dev\//}'="$NF}'
@@ -137,14 +137,14 @@ _diskstats() {
                                               echo "$diskinfo" | awk '/Current_Pending_Sector/ {print "sys_disk_error_pending_sector,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" | awk '/Seek_Error_Rate/ {print "sys_disk_error_seek_rate,target='${disk/\/dev\//}'="$NF}'
                                               echo "$diskinfo" |cut -d"(" -f1 | awk '/Temperature_Celsius/ {print "temp_disk,target='${disk/\/dev\//}'="$NF}'
-                                              done
+                                              done |grep ^sys_disk
                                 }
 
   #raid
   find /dev -type b -name "md*" |while read myraid ;do mdadm --detail ${myraid} | grep -e '^\s*State : ' | awk '{ print $NF; }' |grep -e active -e clean -q && echo sys_raid_statuscode,target=${myraid//\/dev\//}=200 || echo 409;done
   test -f /proc/mdstat && ( dev="";sed 's/\(check\|recovery\|finish\|speed\)/\n#     \0/g;s/^ /#/g' /proc/mdstat |grep -v -e "^# *$" -e "unused devices" -e ^Personalities |while read a ; do if [[ "$a" =~ ^#.*  ]]; then echo "$a"|sed 's/^# \+/'$dev" : "'/g'; else dev=$(echo "$a"|cut -d" " -f1);echo "$a";fi;done|grep -e recovery -e speed -e finish -e check|sed 's/\(min\|K\/sec\|%.\+\)$//g;s/ //g;s/:/_/g;s/^/raid_sync_/g;s/_\(check\|recovery\)/_percent\0/g' )
 echo  ;}; 
-## end diststats
+## end diskstats
 
 _sysstats() {
         test -f /proc/uptime &&       echo "uptime="$(cut -d" " -f1 /proc/uptime |cut -d. -f1)
