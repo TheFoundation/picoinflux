@@ -107,6 +107,7 @@ for item in "${ENDPOINTS[@]}"; do
 done > /tmp/.fluxdata.${TEBI_ACCOUNT_NAME}
 
 [[ -z "${PICOINFLUX_MODULE}" ]] && { 
+echo sending  /tmp/.fluxdata.${TEBI_ACCOUNT_NAME} $(cat  /tmp/.fluxdata.${TEBI_ACCOUNT_NAME}|wc -l )
 TMPDATABASE=/tmp/.fluxdata.${TEBI_ACCOUNT_NAME}
 
 ##TRANSMISSION STAGE::
