@@ -11,11 +11,11 @@
 [[ -z "$TEBI_ACCOUNT_NAME" ]] && TEBI_ACCOUNT_NAME=default
 [[ -z "$TEBI_KEY" ]] && exit 1
 [[ -z "$TEBI_SECRET" ]] && exit 1
-[[ -z "$INFLUX_TOKEN" ]] && exit 1
-[[ -z "$INFLUX_URL" ]] && exit 1
+#[[ -z "$INFLUX_TOKEN" ]] && exit 1
+#[[ -z "$INFLUX_URL" ]] && exit 1
 
-[[ -z "$PICOINFLUX_MODULE" ]] && senddata() { cat ; } ;
-[[ -z "$PICOINFLUX_MODULE" ]] || senddata() {  curl -v -x socks5://127.0.0.1:9050 -s -H "Content-Type: text/plain"  -XPOST "$INFLUX_URL" \
+#[[ -z "$PICOINFLUX_MODULE" ]] && senddata() { cat ; } ;
+#[[ -z "$PICOINFLUX_MODULE" ]] || senddata() {  curl -v -x socks5://127.0.0.1:9050 -s -H "Content-Type: text/plain"  -XPOST "$INFLUX_URL" \
                                                     -H "Authorization: Bearer $INFLUX_TOKEN" --data-binary @/dev/stdin 2>&1|grep -i -e error -e "HTTP/" ; } ;
 
 
@@ -106,6 +106,7 @@ for item in "${ENDPOINTS[@]}"; do
   fetch_and_send "$period" "$url" # 2>&1 | grep "^<"
 done > /tmp/.fluxdata.${TEBI_ACCOUNT_NAME}
 
+[[ -z "${PICOINFLUX_MODULE}" ]] || echo "RUNNING as MODULE" >&2 
 [[ -z "${PICOINFLUX_MODULE}" ]] && { 
 echo sending  /tmp/.fluxdata.${TEBI_ACCOUNT_NAME} $(cat  /tmp/.fluxdata.${TEBI_ACCOUNT_NAME}|wc -l )
 TMPDATABASE=/tmp/.fluxdata.${TEBI_ACCOUNT_NAME}
