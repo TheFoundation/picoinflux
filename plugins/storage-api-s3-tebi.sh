@@ -16,7 +16,7 @@
 
 #[[ -z "$PICOINFLUX_MODULE" ]] && senddata() { cat ; } ;
 #[[ -z "$PICOINFLUX_MODULE" ]] || senddata() {  curl -v -x socks5://127.0.0.1:9050 -s -H "Content-Type: text/plain"  -XPOST "$INFLUX_URL" \
-                                                    -H "Authorization: Bearer $INFLUX_TOKEN" --data-binary @/dev/stdin 2>&1|grep -i -e error -e "HTTP/" ; } ;
+#                                                    -H "Authorization: Bearer $INFLUX_TOKEN" --data-binary @/dev/stdin 2>&1|grep -i -e error -e "HTTP/" ; } ;
 
 
 KEY=$TEBI_KEY
