@@ -6,7 +6,17 @@
 # - SECRET: Your Tebi API secret
 # - INFLUX_URL: InfluxDB v2 write endpoint, e.g. "https://influx.example.com/api/v2/write?org=ORG&bucket=BUCKET&precision=ns"
 # - INFLUX_TOKEN: InfluxDB v2 API token
-
+myuseragent=$(
+(
+echo "Mozilla/5.0 (Linux; U; Android 2.1; en-us; Nexus One Build/ERD62) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17"
+echo "Mozilla/5.0 (iPad; U; CPU OS 4_2_1 like Mac OS X; ja-jp) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"
+echo "Mozilla/5.0 (Linux; Android 4.4.2; SAMSUNG-SM-T537A Build/KOT49H) AppleWebKit/537.36 (KHTML like Gecko) Chrome/35.0.1916.141 Safari/537.36"
+echo "Mozilla/5.0 (Linux; Android 7.1.2; Pixel Build/NHG47N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.83 Mobile Safari/537.36"
+echo "Mozilla/5.0 (X11; Linux i686; rv:14.0) Gecko/20100101 Firefox/14.0.1 Iceweasel/14.0.1"
+echo "Opera/9.80 (X11; Linux x86_64; U; pl) Presto/2.7.62 Version/11.00" 
+echo "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.89 Mobile Safari/537.36"
+)|shuf|shuf |head -n1
+)
 # Config
 [[ -z "$TEBI_ACCOUNT_NAME" ]] && TEBI_ACCOUNT_NAME=default
 [[ -z "$TEBI_KEY" ]] && exit 1
@@ -15,7 +25,7 @@
 #[[ -z "$INFLUX_URL" ]] && exit 1
 
 #[[ -z "$PICOINFLUX_MODULE" ]] && senddata() { cat ; } ;
-#[[ -z "$PICOINFLUX_MODULE" ]] || senddata() {  curl -v -x socks5://127.0.0.1:9050 -s -H "Content-Type: text/plain"  -XPOST "$INFLUX_URL" \
+#[[ -z "$PICOINFLUX_MODULE" ]] || senddata() {  curl --user-agent "$myuseragent" -v -x socks5://127.0.0.1:9050 -s -H "Content-Type: text/plain"  -XPOST "$INFLUX_URL" \
 #                                                    -H "Authorization: Bearer $INFLUX_TOKEN" --data-binary @/dev/stdin 2>&1|grep -i -e error -e "HTTP/" ; } ;
 
 
@@ -54,7 +64,7 @@ convert_date_to_unix() {
 fetch_and_send() {
   local period="$1"
   local url="$2"
-  response=$(curl -x socks5://127.0.0.1:9050 -s -H "Authorization: TB-PLAIN ${KEY}:${SECRET}" "$url")
+  response=$(curl --user-agent "$myuseragent"  -x socks5://127.0.0.1:9050 -s -H "Authorization: TB-PLAIN ${KEY}:${SECRET}" "$url")
   #echo "$response"|jq .
   first=$(echo "$response" | jq '.data[0]')
 
