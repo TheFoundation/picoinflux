@@ -41,30 +41,31 @@ _sys_memory_percent() {
     grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
     echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
 
-_libvirt_mem_percent() { # Libvirt-VM Speicher auslesen und formatieren
+_libvirt_mem_percent() { # Libvirt-VM memory
 if command -v virsh >/dev/null 2>&1; then
     for vm in $(virsh list --name --state-running); do
-        # Holt die Speicherwerte der laufenden VM
         stats=$(virsh dommemstat "$vm")
         
-        # Filtert die einzelnen Werte heraus (in Kilobyte)
+        # kbyte values
         actual=$(echo "$stats" | awk '/actual/ {print $2}')
         unused=$(echo "$stats" | awk '/unused/ {print $2}')
         rss=$(echo "$stats" | awk '/rss/ {print $2}')
         
-        # Falls Werte leer sind, werden sie auf 0 gesetzt
+        # empty to zero
         actual=${actual:-0}
         unused=${unused:-0}
         rss=${rss:-0}
         
-        # Berechnet den genutzten Speicher (Zugeordnet minus Ungenutzt)
         used_percent=0
         if [ "$actual" -gt 0 ]; then
             used_percent=$(( used * 100 / actual ))
         fi
+        echo "libvirt_memory_actual_kb,vm=$vm value=$actual"
+        echo "libvirt_memory_unused_kb,vm=$vm value=$unused"
+        echo "libvirt_memory_used_kb,vm=$vm value=$used"
+        echo "libvirt_memory_rss_kb,vm=$vm value=$rss"
+        echo "libvirt_memory_used_percent,vm=$vm value=$used_percent"
 
-        # Erstellt die Zeile für InfluxDB mit used_percent
-        echo "libvirt_memory,vm=$vm actual_kb=$actual,unused_kb=$unused,used_kb=$used,rss_kb=$rss,used_percent=$used_percent"
    done
 fi ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
