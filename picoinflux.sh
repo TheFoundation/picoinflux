@@ -58,11 +58,13 @@ if command -v virsh >/dev/null 2>&1; then
         rss=${rss:-0}
         
         # Berechnet den genutzten Speicher (Zugeordnet minus Ungenutzt)
-        used=$((actual - unused))
+        used_percent=0
+        if [ "$actual" -gt 0 ]; then
+            used_percent=$(( used * 100 / actual ))
+        fi
 
-        # Erstellt die Zeile für InfluxDB
-        echo "libvirt_memory,vm=$vm actual_kb=$actual,unused_kb=$unused,used_kb=$used,rss_kb=$rss"
-    done
+        # Erstellt die Zeile für InfluxDB mit used_percent
+        echo "libvirt_memory,vm=$vm actual_kb=$actual,unused_kb=$unused,used_kb=$used,rss_kb=$rss,used_percent=$used_percent"
 fi ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
 grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
@@ -295,9 +297,9 @@ sleep 1
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=heise.de"$(ping6 heise.de -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" )     >&7)
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 ## get dockerhub counts via api
-( test -e /etc/pico.dockerhub.conf   && _dockerhubstats |grep -v '^-' >&7 ) 2>>/dev/shm/picoinflux.stderr.run.log  &
+( test -e /etc/pico.dockerhub.conf   && _dockerhubstats |grep -v '^-'  ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 ## get wigle stats via api
-( test -e /etc/picoinflux.wigletoken && _wiglestats >&6  ) 2>>/dev/shm/picoinflux.stderr.run.log  &
+( test -e /etc/picoinflux.wigletoken && _wiglestats   ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 sleep 1
 
 
