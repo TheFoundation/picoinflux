@@ -301,6 +301,7 @@ sleep 1
 ( test -e /etc/picoinflux.wigletoken && _wiglestats   ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 sleep 1
 
+(_libvirt_mem_percent ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 ##docker netstat
 #( docker=$(which docker) && $docker ps --format "{{.Names}}" -a|tail -n+2 |grep -v ^$| while read contline;do
@@ -341,7 +342,6 @@ echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed
 
 )
 
-(_libvirt_mem_percent ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 )  >&5 2>>/dev/shm/picoinflux.stderr.run.log &
 
