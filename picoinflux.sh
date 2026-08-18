@@ -49,6 +49,7 @@ which virsh &>/dev/null && (
         # kbyte values
         actual=$(echo "$stats" | awk '/actual/ {print $2}')
         unused=$(echo "$stats" | awk '/unused/ {print $2}')
+        usable=$(echo "$stats" | awk '/usable/ {print $2}')
         rss=$(echo "$stats" | awk '/rss/ {print $2}')
         
         # empty to zero
@@ -57,14 +58,14 @@ which virsh &>/dev/null && (
         rss=${rss:-0}
         
         used_percent=0
-        if [ "$actual" -gt 0 ]; then
-            used_percent=$(( used * 100 / actual ))
+        if [ "$usable" -gt 0 ]; then
+            used_percent=$(( actual * 100 / usable ))
         fi
-        echo "libvirt_memory_actual_kb,vm=$vm value=$actual"
-        echo "libvirt_memory_unused_kb,vm=$vm value=$unused"
-        echo "libvirt_memory_used_kb,vm=$vm value=$used"
-        echo "libvirt_memory_rss_kb,vm=$vm value=$rss"
-        echo "libvirt_memory_used_percent,vm=$vm value=$used_percent"
+        echo "libvirt_memory_actual_kb,vm=$vm $actual"
+        echo "libvirt_memory_unused_kb,vm=$vm $unused"
+        echo "libvirt_memory_used_kb,vm=$vm $used"
+        echo "libvirt_memory_rss_kb,vm=$vm $rss"
+        echo "libvirt_memory_used_percent,vm=$vm $used_percent"
 
    done ) ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
