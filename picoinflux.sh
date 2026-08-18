@@ -65,6 +65,7 @@ if command -v virsh >/dev/null 2>&1; then
 
         # Erstellt die Zeile für InfluxDB mit used_percent
         echo "libvirt_memory,vm=$vm actual_kb=$actual,unused_kb=$unused,used_kb=$used,rss_kb=$rss,used_percent=$used_percent"
+   done
 fi ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
 grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
@@ -288,9 +289,6 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 for fansp in $(find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>/dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
 
 sleep 1
-(_libvirt_mem_percent ) 2>>/dev/shm/picoinflux.stderr.run.log &
-
-
         ( ## ipv6 thread
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=he.net"$(ping6 he.net -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" )         >&5)
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=google.com"$(ping6 google.com -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" ) >&6)
@@ -342,6 +340,7 @@ echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed
 
 )
 
+(_libvirt_mem_percent ) 2>>/dev/shm/picoinflux.stderr.run.log &
 
 )  >&5 2>>/dev/shm/picoinflux.stderr.run.log &
 
