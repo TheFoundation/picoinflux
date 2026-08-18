@@ -41,6 +41,29 @@ _sys_memory_percent() {
     grep -e "[0-9]" /proc/swaps |awk '{print  $1 "=" (-$4/$3*100) }'|sed 's/^/sys_mem_percent_swap_/g;s/\(\/\|\t\)/_/g;s/_\+/_/g';
     echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
 
+_libvirt_mem_percent() { # Libvirt-VM Speicher auslesen und formatieren
+if command -v virsh >/dev/null 2>&1; then
+    for vm in $(virsh list --name --state-running); do
+        # Holt die Speicherwerte der laufenden VM
+        stats=$(virsh dommemstat "$vm")
+        
+        # Filtert die einzelnen Werte heraus (in Kilobyte)
+        actual=$(echo "$stats" | awk '/actual/ {print $2}')
+        unused=$(echo "$stats" | awk '/unused/ {print $2}')
+        rss=$(echo "$stats" | awk '/rss/ {print $2}')
+        
+        # Falls Werte leer sind, werden sie auf 0 gesetzt
+        actual=${actual:-0}
+        unused=${unused:-0}
+        rss=${rss:-0}
+        
+        # Berechnet den genutzten Speicher (Zugeordnet minus Ungenutzt)
+        used=$((actual - unused))
+
+        # Erstellt die Zeile für InfluxDB
+        echo "libvirt_memory,vm=$vm actual_kb=$actual,unused_kb=$unused,used_kb=$used,rss_kb=$rss"
+    done
+fi ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
 grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
 
@@ -262,8 +285,9 @@ test -f /proc/meminfo && (cat /proc/meminfo |grep -e ^Mem -e ^VmallocTotal |sed 
 ##fanspeed from hwmon
 for fansp in $(find -name "fan*_input" /sys/devices/virtual/hwmon/hwmon*/ 2>/dev/null ); do echo fanspeed_$(echo  $fansp|cut -d/ -f 6)=$(cat $fansp);done
 
-
 sleep 1
+(_libvirt_mem_percent ) 2>>/dev/shm/picoinflux.stderr.run.log &
+
 
         ( ## ipv6 thread
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=he.net"$(ping6 he.net -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" )         >&5)
@@ -271,9 +295,9 @@ sleep 1
         which ping6 >/dev/null && ( ip -6 r  s ::/0 |grep -q " metric " && echo "ping_ipv6,target=heise.de"$(ping6 heise.de -c 2 -w 2             2>&1|sed 's/.\+time//g' |grep ^=|sort -n|tail -n1|cut -d" " -f1|sed 's/^ \+$//g;s/^$/=-23/g'|grep -s "=" || echo "=-23" )     >&7)
          >&5 ) 2>>/dev/shm/picoinflux.stderr.run.log &
 ## get dockerhub counts via api
-( test -e /etc/pico.dockerhub.conf   && _dockerhubstats |grep -v '^-' ) 2>>/dev/shm/picoinflux.stderr.run.log  &
+( test -e /etc/pico.dockerhub.conf   && _dockerhubstats |grep -v '^-' >&7 ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 ## get wigle stats via api
-( test -e /etc/picoinflux.wigletoken && _wiglestats ) 2>>/dev/shm/picoinflux.stderr.run.log  &
+( test -e /etc/picoinflux.wigletoken && _wiglestats >&6  ) 2>>/dev/shm/picoinflux.stderr.run.log  &
 sleep 1
 
 
