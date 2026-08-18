@@ -42,7 +42,7 @@ _sys_memory_percent() {
     echo "sys_mem_percent_ram="$(echo $(grep -e MemTotal -e MemFree -e Buffers -e Cached /proc/meminfo|sed 's/\([0-9]\+\) kB/\1/g;s/\( \|\t\)//g;'|cut -d: -f2)|awk '{print 100-100*($2+$3+$4)/$1}') ; } ;
 
 _libvirt_mem_percent() { # Libvirt-VM memory
-if command -v virsh >/dev/null 2>&1; then
+which virsh &>/dev/null && (
     for vm in $(virsh list --name --state-running); do
         stats=$(virsh dommemstat "$vm")
         
@@ -66,8 +66,7 @@ if command -v virsh >/dev/null 2>&1; then
         echo "libvirt_memory_rss_kb,vm=$vm value=$rss"
         echo "libvirt_memory_used_percent,vm=$vm value=$used_percent"
 
-   done
-fi ; } ; 
+   done ) ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
 grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
 
