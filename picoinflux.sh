@@ -51,6 +51,7 @@ which virsh &>/dev/null && (
         unused=$(echo "$stats" | awk '/unused/ {print $2}')
         usable=$(echo "$stats" | awk '/usable/ {print $2}')
         rss=$(echo "$stats" | awk '/rss/ {print $2}')
+        used=$(( $actual - $unused ))
         
         # empty to zero
         actual=${actual:-0}
@@ -58,8 +59,8 @@ which virsh &>/dev/null && (
         rss=${rss:-0}
         
         used_percent=0
-        if [ "$usable" -gt 0 ]; then
-            used_percent=$(( actual * 100 / usable ))
+        if [ "$actual" -gt 0 ]; then
+            used_percent=$(( $used * 100 / $actual ))
         fi
         echo "libvirt_memory_actual_kb,vm=$vm=$actual"
         echo "libvirt_memory_unused_kb,vm=$vm=$unused"
@@ -70,7 +71,6 @@ which virsh &>/dev/null && (
    done ) ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
 grep_numbers_int()   { grep -x -E '[0-9]+' ; } ;
-
 
 #### time stamp and hostname ####
 timestamp_nanos() { if [[ $(date -u +%s%N |wc -c) -eq 20  ]]; then date +%s%N;else expr $(date -u +%s) "*" 1000 "*" 1000 "*" 1000 ; fi ; } ;
@@ -342,9 +342,7 @@ echo "${dockermemstats}" |sed 's/\///g' |grep -v ^MEM |awk '{print $3"="$2}'|sed
 
 )
 
-
 )  >&5 2>>/dev/shm/picoinflux.stderr.run.log &
-
 
 
 ## end of main
