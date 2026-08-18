@@ -61,11 +61,11 @@ which virsh &>/dev/null && (
         if [ "$usable" -gt 0 ]; then
             used_percent=$(( actual * 100 / usable ))
         fi
-        echo "libvirt_memory_actual_kb,vm=$vm $actual"
-        echo "libvirt_memory_unused_kb,vm=$vm $unused"
-        echo "libvirt_memory_used_kb,vm=$vm $used"
-        echo "libvirt_memory_rss_kb,vm=$vm $rss"
-        echo "libvirt_memory_used_percent,vm=$vm $used_percent"
+        echo "libvirt_memory_actual_kb,vm=$vm=$actual"
+        echo "libvirt_memory_unused_kb,vm=$vm=$unused"
+        echo "libvirt_memory_used_kb,vm=$vm=$used"
+        echo "libvirt_memory_rss_kb,vm=$vm=$rss"
+        echo "libvirt_memory_used_percent,vm=$vm=$used_percent"|grep -v " 0 $"
 
    done ) ; } ; 
 grep_numbers_float() { grep -Eo '[+-]?[0-9]+([.][0-9]+)?' ; } ;
